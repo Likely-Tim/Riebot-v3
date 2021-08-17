@@ -1,9 +1,26 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageActionRow, MessageButton } = require('discord.js');
 const Database = require("@replit/database");
 const SPOTID = process.env['SPOTIFY ID'];
 const SPOTSECRET = process.env['SPOTIFY SECRET'];
 const fetch = require("node-fetch");
 const db = new Database();
+const Discord = require("discord.js");
+
+
+const refresh = new MessageButton()
+					.setCustomId('refresh')
+					.setStyle('SECONDARY')
+          .setEmoji("🔄");
+const refresh_button = new MessageActionRow()
+			.addComponents(refresh);
+const refresh_disabled = new MessageButton()
+					.setCustomId('refresh')
+					.setStyle('SECONDARY')
+          .setEmoji("🔄")
+          .setDisabled(true);
+const refresh_button_disabled = new MessageActionRow()
+			.addComponents(refresh_disabled);
 
 async function sendPostRequest_refreshToken() {
   let refresh = await db.get("spotify_refresh");
@@ -41,12 +58,33 @@ async function playing_parse(response) {
   return response.item.external_urls.spotify
 }
 
+async function disable_previous(client, new_message) {
+  const channel_id = await db.get("current_spotify_playing_channel");
+  const channel = await client.channels.fetch(channel_id);
+  const old_message_id = await db.get("current_spotify_playing_id");
+  const old_message = await await channel.messages.fetch(old_message_id);
+  old_message.edit({components: [refresh_button_disabled]});
+  await db.set("current_spotify_playing_channel", new_message.channelId);
+  await db.set("current_spotify_playing_id", new_message.id);
+  return;
+}
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('spotify-playing')
 		.setDescription('What is currently playing?'),
+
 	async execute(client, interaction) {
     let response = await sendGetRequest_currentPlaying();
-		return interaction.reply(response);
+		await interaction.reply({ content: response, components: [refresh_button] });
+    const message = await interaction.fetchReply();
+    disable_previous(client, message);
+
+    // Button Interaction
+    let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
+    collector.on("collect", async press => {
+      let response = await sendGetRequest_currentPlaying();
+      await press.update({ content: response, components: [refresh_button] });
+    });
 	},
 };
