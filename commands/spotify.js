@@ -1,11 +1,22 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton } = require('discord.js');
-const Database = require("@replit/database");
-const db = new Database();
 const SPOTID = process.env['SPOTIFY ID'];
 const SPOTSECRET = process.env['SPOTIFY SECRET'];
 const fetch = require("node-fetch");
 const Discord = require("discord.js");
+const Keyv = require('keyv');
+const { KeyvFile } = require('keyv-file');
+const Database = require("@replit/database");
+const replit_db = new Database();
+
+
+const db = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/spotify.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+})
 
 // Buttons
 const next = new MessageButton()
@@ -37,7 +48,7 @@ const disabled = new MessageActionRow()
 
 
 async function sendPostRequest_refreshToken() {
-  let refresh = await db.get("spotify_refresh");
+  let refresh = await replit_db.get("spotify_refresh");
   let url = "https://accounts.spotify.com/api/token";
   let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh};
   let response = await fetch(url, {
@@ -45,12 +56,12 @@ async function sendPostRequest_refreshToken() {
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  db.set("spotify_access", response.access_token);
+  replit_db.set("spotify_access", response.access_token);
   return;
 }
 
 async function sendGetRequest_search(type, query) {
-  let access_token = await db.get("spotify_access");
+  let access_token = await replit_db.get("spotify_access");
   let url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&market=JP&limit=5`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
@@ -134,10 +145,16 @@ async function content_retrieve(action) {
 
 async function disable_previous(client, new_message) {
   const channel_id = await db.get("current_spotify_channel");
-  const channel = await client.channels.fetch(channel_id);
-  const old_message_id = await db.get("current_spotify_id");
-  const old_message = await await channel.messages.fetch(old_message_id);
-  old_message.edit({components: [disabled]});
+  if (channel_id != undefined) {
+    const channel = await client.channels.fetch(channel_id);
+    const old_message_id = await db.get("current_spotify_id");
+    try {
+      const old_message = await channel.messages.fetch(old_message_id);
+      old_message.edit({components: [disabled]});
+    } catch (error) {
+      console.log("Previous spotify response was deleted.");
+    }
+  }
   await db.set("current_spotify_channel", new_message.channelId);
   await db.set("current_spotify_id", new_message.id);
   return;
@@ -157,8 +174,8 @@ module.exports = {
     let response = await sendGetRequest_search(type, query);
     await interaction.reply({ content: response, components: [only_next] });
     const message = await interaction.fetchReply();
-    disable_previous(client, message);
-    
+    await disable_previous(client, message);
+
     // Button Interaction
     let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {

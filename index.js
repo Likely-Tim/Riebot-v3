@@ -1,8 +1,7 @@
 const fs = require('fs');
-const { Client, Collection, Intents } = require('discord.js');
 const keepAlive = require("./server");
 const refreshSlashCommands = require("./SlashRefresh");
-const TOKEN = process.env['TOKEN']
+const { Client, Collection, Intents } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 refreshSlashCommands();
@@ -15,8 +14,14 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', () => {
-	console.log('Ready!');
-  console.log(new Date());
+  // Log startup time
+  let options = { timezone: 'America/Los_Angeles', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+  let time = new Date().getTime();
+  time -= (3600000 * 7);
+  fs.writeFile('StartUpTime.txt', new Date(time).toLocaleString('en-US', options) + '\n', { flag: 'a+' }, console_error);
+  // TODO: Disable previous messages
+
+  console.log('Ready!');
 });
 
 
@@ -33,6 +38,16 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
+// client.on('debug', console.log);
 keepAlive();
-client.login(TOKEN);
+client.login(process.env['TOKEN']);
 
+//////////////////////////////////////////
+/////////// HELPER FUNCTIONS /////////////
+//////////////////////////////////////////
+
+function console_error(err) {
+  if(err) {
+    throw err;
+  }
+}
