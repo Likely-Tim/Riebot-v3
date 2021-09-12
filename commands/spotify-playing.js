@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const Database = require("@replit/database");
@@ -12,15 +13,24 @@ const refresh = new MessageButton()
 					.setCustomId('refresh')
 					.setStyle('SECONDARY')
           .setEmoji("🔄");
-const refresh_button = new MessageActionRow()
-			.addComponents(refresh);
 const refresh_disabled = new MessageButton()
 					.setCustomId('refresh')
 					.setStyle('SECONDARY')
           .setEmoji("🔄")
           .setDisabled(true);
+const check = new MessageButton()
+          .setCustomId('save')
+          .setStyle('SECONDARY')
+          .setEmoji("✅");
+const check_disabled = new MessageButton()
+          .setCustomId('save')
+          .setStyle('SECONDARY')
+          .setEmoji("✅")
+          .setDisabled(true);
+const refresh_button = new MessageActionRow()
+			.addComponents(refresh, check);
 const refresh_button_disabled = new MessageActionRow()
-			.addComponents(refresh_disabled);
+			.addComponents(refresh_disabled, check_disabled);
 
 async function sendPostRequest_refreshToken() {
   let refresh = await db.get("spotify_refresh");
@@ -83,8 +93,20 @@ module.exports = {
     // Button Interaction
     let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {
-      let response = await sendGetRequest_currentPlaying();
-      await press.update({ content: response, components: [refresh_button] });
+      if(press.customId == 'save') {
+        if(press.message.content.startsWith('https://open.spotify.com/track/')) {
+          fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
+            if(err) {
+              console.log(err);
+              return;
+            }
+          });
+        }
+        await press.update({ components: [refresh_button_disabled] })
+      } else {
+        let response = await sendGetRequest_currentPlaying();
+        await press.update({ content: response, components: [refresh_button] });
+      }
     });
 	},
 };

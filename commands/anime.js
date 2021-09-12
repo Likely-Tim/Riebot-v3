@@ -6,8 +6,8 @@ const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const MALSecret = process.env['MAL SECRET'];
 const MALID = process.env['MAL ID'];
-const access_token = process.env['MAL ACCESS TOKEN'];
-const code_verifier = process.env['MAL CODE VERIFIER'];
+const Database = require("@replit/database");
+const replit_db = new Database();
 const mal_picture = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
 
 const db = new Keyv({
@@ -68,14 +68,33 @@ const va_buttons = new MessageActionRow()
 const va_buttons_disabled = new MessageActionRow()
       .addComponents(vaCharactersButton_disabled);
 
+async function postRefreshMAL() {
+  let url = "https://myanimelist.net/v1/oauth2/token";
+  let refresh_token = await replit_db.get("mal_refresh");
+  let data = {"client_id": MALID, "client_secret": MALSecret, "grant_type": "refresh_token", "refresh_token": refresh_token};
+  let response = await fetch(url, {
+      method: 'POST', 
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams(data)});
+  response = await response.json();
+  await replit_db.set("mal_access", response.access_token);
+  await replit_db.set("mal_refresh", response.refresh_token);
+}
+
 async function sendGetRequest_search(query) {
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
+  let access_token = await replit_db.get("mal_access");
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
       method: 'GET', 
       headers: {"Authorization": authorization}});
   if(response.status == 400) {
     return "No show found!"
+  }
+  if(response.status == 401) {
+    console.log("test");
+    await postRefreshMAL();
+    return await sendGetRequest_search(query);
   }
   response = await response.json();
   let id = response.data[0].node.id;

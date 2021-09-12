@@ -18,7 +18,7 @@ async function sendGetRequest_search(type, query) {
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('ping')
+		.setName('playlist-add')
 		.setDescription('Replies with Pong!'),
 	async execute(client, interaction) {
 		return interaction.reply('Pong!');

@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const SPOTID = process.env['SPOTIFY ID'];
@@ -16,7 +17,7 @@ const db = new Keyv({
     encode: JSON.stringify,
     decode: JSON.parse
   })
-})
+});
 
 // Buttons
 const next = new MessageButton()
@@ -37,14 +38,23 @@ const prev_disabled = new MessageButton()
 					.setStyle('SECONDARY')
           .setEmoji("⬅️")
           .setDisabled(true);
+const check = new MessageButton()
+          .setCustomId('save')
+          .setStyle('SECONDARY')
+          .setEmoji("✅");
+const check_disabled = new MessageButton()
+          .setCustomId('save')
+          .setStyle('SECONDARY')
+          .setEmoji("✅")
+          .setDisabled(true);
 const only_next = new MessageActionRow()
-			.addComponents(prev_disabled, next);
+			.addComponents(prev_disabled, next, check);
 const only_prev = new MessageActionRow()
-			.addComponents(prev, next_disabled);
+			.addComponents(prev, next_disabled, check);
 const button_row = new MessageActionRow()
-			.addComponents(prev, next);
+			.addComponents(prev, next, check);
 const disabled = new MessageActionRow()
-			.addComponents(prev_disabled, next_disabled);
+			.addComponents(prev_disabled, next_disabled, check_disabled);
 
 
 async function sendPostRequest_refreshToken() {
@@ -179,8 +189,20 @@ module.exports = {
     // Button Interaction
     let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {
-      let content = await content_retrieve(press.customId);
-      await press.update({ content: content[0], components: content[1] });
+      if(press.customId = "save") {
+        if(press.message.content.startsWith('https://open.spotify.com/track/')) {
+          fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
+            if(err) {
+              console.log(err);
+              return;
+            }
+          });
+        }
+        await press.update({ components: [disabled] });
+      } else {
+        let content = await content_retrieve(press.customId);
+        await press.update({ content: content[0], components: content[1] });
+      }
     });
     return;
 	},

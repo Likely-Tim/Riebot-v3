@@ -38,6 +38,18 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
+client.on('messageCreate', async message => {
+  if(message.author.bot == false) {
+    if(message.content.startsWith('https://open.spotify.com/track/')) {
+      fs.writeFile("./web/saved/spotify.txt", message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
+      if(err) {
+        console.log(err);
+        return;
+      }});
+    }
+  }
+});
+
 // client.on('debug', console.log);
 keepAlive();
 client.login(process.env['TOKEN']);
