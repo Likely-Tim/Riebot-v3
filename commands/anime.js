@@ -1,14 +1,13 @@
 const fetch = require("node-fetch");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
-const { MessageEmbed } = require('discord.js');
+const { MessageActionRow, MessageButton, InteractionCollector, MessageEmbed } = require('discord.js');
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const MALSecret = process.env['MAL SECRET'];
 const MALID = process.env['MAL ID'];
-const Database = require("@replit/database");
-const replit_db = new Database();
-const mal_picture = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
+const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
+const CryptoJS = require("crypto-js");
+const PASSWORD = process.env['PASSWORD']
 
 const db = new Keyv({
   store: new KeyvFile({
@@ -16,7 +15,15 @@ const db = new Keyv({
     encode: JSON.stringify,
     decode: JSON.parse
   })
-})
+});
+
+const tokens = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/tokens.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
 
 // Buttons
 const vaCharactersButton = new MessageButton()
@@ -70,20 +77,24 @@ const va_buttons_disabled = new MessageActionRow()
 
 async function postRefreshMAL() {
   let url = "https://myanimelist.net/v1/oauth2/token";
-  let refresh_token = await replit_db.get("mal_refresh");
+  let refresh_token_encrypted = await tokens.get("mal_refresh");
+  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let data = {"client_id": MALID, "client_secret": MALSecret, "grant_type": "refresh_token", "refresh_token": refresh_token};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  await replit_db.set("mal_access", response.access_token);
-  await replit_db.set("mal_refresh", response.refresh_token);
+  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("mal_access", access_token_encrypted);
+  refresh_token_encrypted = CryptoJS.AES.encrypt(response.refresh_token, PASSWORD).toString();
+  await tokens.set("mal_refresh", refresh_token_encrypted);
 }
 
 async function sendGetRequest_search(query) {
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
-  let access_token = await replit_db.get("mal_access");
+  let access_token_encrypted = await tokens.get("mal_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
       method: 'GET', 
@@ -92,7 +103,6 @@ async function sendGetRequest_search(query) {
     return "No show found!"
   }
   if(response.status == 401) {
-    console.log("test");
     await postRefreshMAL();
     return await sendGetRequest_search(query);
   }
@@ -217,7 +227,7 @@ function show_embed_builder(response) {
   result.setTitle(response.title);
   let link = "https://myanimelist.net/anime/" + response.id;
   result.setURL(link);
-  result.setAuthor(studio_builder(response.studios), mal_picture);
+  result.setAuthor(studio_builder(response.studios), MAL_LOGO);
   result.setDescription(response.synopsis);
   result.setThumbnail(response.main_picture.large);
   let opening_themes = song_builder(response.opening_themes);

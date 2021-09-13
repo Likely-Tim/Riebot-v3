@@ -1,19 +1,28 @@
 const fs = require('fs');
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton } = require('discord.js');
-const SPOTID = process.env['SPOTIFY ID'];
-const SPOTSECRET = process.env['SPOTIFY SECRET'];
 const fetch = require("node-fetch");
-const Discord = require("discord.js");
+const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
-const Database = require("@replit/database");
-const replit_db = new Database();
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 
+// Secrets
+const PASSWORD = process.env['PASSWORD'];
+const SPOTID = process.env['SPOTIFY ID'];
+const SPOTSECRET = process.env['SPOTIFY SECRET'];
 
+// Databases
 const db = new Keyv({
   store: new KeyvFile({
     filename: `storage/spotify.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
+const tokens = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/tokens.json`,
     encode: JSON.stringify,
     decode: JSON.parse
   })
@@ -58,20 +67,23 @@ const disabled = new MessageActionRow()
 
 
 async function sendPostRequest_refreshToken() {
-  let refresh = await replit_db.get("spotify_refresh");
+  let refresh_token_encrypted = tokens.get("spotify_refresh");
+  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  replit_db.set("spotify_access", response.access_token);
+  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("spotify_access", access_token_encrypted);
   return;
 }
 
 async function sendGetRequest_search(type, query) {
-  let access_token = await replit_db.get("spotify_access");
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&market=JP&limit=5`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
@@ -187,9 +199,9 @@ module.exports = {
     await disable_previous(client, message);
 
     // Button Interaction
-    let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
+    let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {
-      if(press.customId = "save") {
+      if(press.customId == "save") {
         if(press.message.content.startsWith('https://open.spotify.com/track/')) {
           fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
             if(err) {

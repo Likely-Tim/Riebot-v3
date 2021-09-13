@@ -1,16 +1,27 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
-const SPOTID = process.env['SPOTIFY ID'];
-const SPOTSECRET = process.env['SPOTIFY SECRET'];
 const fetch = require("node-fetch");
-const Database = require("@replit/database");
-const replit_db = new Database();
+const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 
+// Secrets
+const SPOTID = process.env['SPOTIFY ID'];
+const SPOTSECRET = process.env['SPOTIFY SECRET'];
+const PASSWORD = process.env['PASSWORD'];
+
+// Databases
 const db = new Keyv({
   store: new KeyvFile({
     filename: `storage/spotify-top.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
+const tokens = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/tokens.json`,
     encode: JSON.stringify,
     decode: JSON.parse
   })
@@ -45,20 +56,23 @@ const disabled = new MessageActionRow()
 			.addComponents(prev_disabled, next_disabled);
 
 async function sendPostRequest_refreshToken() {
-  let refresh = await replit_db.get("spotify_refresh");
+  let refresh_token_encrypted = tokens.get("spotify_refresh");
+  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  replit_db.set("spotify_access", response.access_token);
+  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("spotify_access", access_token_encrypted);
   return;
 }
 
 async function sendGetRequest_top(type, time) {
-  let access_token = await replit_db.get("spotify_access");
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = `https://api.spotify.com/v1/me/top/${type}?time_range=${time}&limit=5`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
@@ -80,6 +94,23 @@ function response_parse(input) {
   return input[0].external_urls.spotify;
 }
 
+async function disable_previous(client, new_message) {
+  const channel_id = await db.get("current_spotify_channel");
+  if (channel_id != undefined) {
+    const channel = await client.channels.fetch(channel_id);
+    const old_message_id = await db.get("current_spotify_id");
+    try {
+      const old_message = await channel.messages.fetch(old_message_id);
+      old_message.edit({components: [disabled]});
+    } catch (error) {
+      console.log("Previous spotify response was deleted.");
+    }
+  }
+  await db.set("current_spotify_channel", new_message.channelId);
+  await db.set("current_spotify_id", new_message.id);
+  return;
+}
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('spotify-top')
@@ -94,6 +125,7 @@ module.exports = {
 		await interaction.reply({ content: response, components: [only_next] });
 
     const message = await interaction.fetchReply();
+    await disable_previous(client, message);
     await db.set("counter", 0);
     let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {

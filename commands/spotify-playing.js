@@ -1,13 +1,32 @@
 const fs = require('fs');
+const fetch = require("node-fetch");
+const CryptoJS = require("crypto-js");
+const Keyv = require('keyv');
+const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton } = require('discord.js');
-const Database = require("@replit/database");
+const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
+
+// Secrets
 const SPOTID = process.env['SPOTIFY ID'];
 const SPOTSECRET = process.env['SPOTIFY SECRET'];
-const fetch = require("node-fetch");
-const db = new Database();
-const Discord = require("discord.js");
+const PASSWORD = process.env['PASSWORD'];
 
+// Databases
+const db = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/spotify-playing.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
+const tokens = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/tokens.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
 
 const refresh = new MessageButton()
 					.setCustomId('refresh')
@@ -33,20 +52,23 @@ const refresh_button_disabled = new MessageActionRow()
 			.addComponents(refresh_disabled, check_disabled);
 
 async function sendPostRequest_refreshToken() {
-  let refresh = await db.get("spotify_refresh");
+  let refresh_token_encrypted = tokens.get("spotify_refresh");
+  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  db.set("spotify_access", response.access_token);
+  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("spotify_access", access_token_encrypted);
   return;
 }
 
 async function sendGetRequest_currentPlaying() {
-  let access_token = await db.get("spotify_access");
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = `https://api.spotify.com/v1/me/player/currently-playing?market=US`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
@@ -69,13 +91,19 @@ async function playing_parse(response) {
 }
 
 async function disable_previous(client, new_message) {
-  const channel_id = await db.get("current_spotify_playing_channel");
-  const channel = await client.channels.fetch(channel_id);
-  const old_message_id = await db.get("current_spotify_playing_id");
-  const old_message = await await channel.messages.fetch(old_message_id);
-  old_message.edit({components: [refresh_button_disabled]});
-  await db.set("current_spotify_playing_channel", new_message.channelId);
-  await db.set("current_spotify_playing_id", new_message.id);
+  const channel_id = await db.get("current_spotify_channel");
+  if (channel_id != undefined) {
+    const channel = await client.channels.fetch(channel_id);
+    const old_message_id = await db.get("current_spotify_id");
+    try {
+      const old_message = await channel.messages.fetch(old_message_id);
+      old_message.edit({components: [refresh_button_disabled]});
+    } catch (error) {
+      console.log("Previous spotify response was deleted.");
+    }
+  }
+  await db.set("current_spotify_channel", new_message.channelId);
+  await db.set("current_spotify_id", new_message.id);
   return;
 }
 
@@ -91,7 +119,7 @@ module.exports = {
     disable_previous(client, message);
 
     // Button Interaction
-    let collector = new Discord.InteractionCollector(client, {message: message, componentType: "BUTTON"});
+    let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
     collector.on("collect", async press => {
       if(press.customId == 'save') {
         if(press.message.content.startsWith('https://open.spotify.com/track/')) {

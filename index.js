@@ -40,8 +40,32 @@ client.on('interactionCreate', async interaction => {
 
 client.on('messageCreate', async message => {
   if(message.author.bot == false) {
-    if(message.content.startsWith('https://open.spotify.com/track/')) {
-      fs.writeFile("./web/saved/spotify.txt", message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
+    let content = message.content;
+    if(content.startsWith('https://open.spotify.com/track/')) {
+      fs.writeFile("./web/saved/spotify.txt", content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
+      if(err) {
+        console.log(err);
+        return;
+      }});
+    } else if(content.startsWith('https://www.youtube.com/watch')) {
+      content = content.replace('https://www.youtube.com/watch', '');
+      let parameters = new URLSearchParams(content);
+      if(parameters.has('v')) {
+        fs.writeFile("./web/saved/youtube.txt", parameters.get('v') + '\n', { flag: 'a+' }, err => {
+        if(err) {
+          console.log(err);
+          return;
+        }});
+      }
+    } else if(content.startsWith('https://youtu.be/')) {
+      let start = content.lastIndexOf('/');
+      let end = content.indexOf('?');
+      if(end == -1) {
+        content = content.substr(start + 1);
+      } else {
+        content = content.substr(start + 1, end - start - 1);
+      }
+      fs.writeFile("./web/saved/youtube.txt", content + '\n', { flag: 'a+' }, err => {
       if(err) {
         console.log(err);
         return;

@@ -1,0 +1,19 @@
+* {
+  background-color: #2c2f33;
+}
+
+img {
+  border-radius: 70%;
+  width: 300px;
+  height: 350px;
+}
+
+div.container {
+  display: flex;
+  justify-content: center;
+}
+
+div.slide {
+  display: none;
+}
+
