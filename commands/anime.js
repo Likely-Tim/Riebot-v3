@@ -1,14 +1,19 @@
 const fetch = require("node-fetch");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, InteractionCollector, MessageEmbed } = require('discord.js');
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
-const MALSecret = process.env['MAL SECRET'];
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { MessageActionRow, MessageButton, InteractionCollector, MessageEmbed } = require('discord.js');
+
+
+// Secrets
 const MALID = process.env['MAL ID'];
+const MALSecret = process.env['MAL SECRET'];
+const PASSWORD = process.env['PASSWORD'];
+
 const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
 const CryptoJS = require("crypto-js");
-const PASSWORD = process.env['PASSWORD']
 
+// Databases
 const db = new Keyv({
   store: new KeyvFile({
     filename: `storage/anime.json`,
