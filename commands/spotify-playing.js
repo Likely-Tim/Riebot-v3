@@ -78,7 +78,7 @@ async function sendGetRequest_currentPlaying() {
 }
 
 async function playing_parse(response) {
-  if(response.status === 401) {
+  if(response.status === 401 || response.status == 400) {
     await sendPostRequest_refreshToken();
     let response = await sendGetRequest_currentPlaying();
     return response;
@@ -87,7 +87,7 @@ async function playing_parse(response) {
     return "Nothing playing.";
   }
   response = await response.json();
-  return response.item.external_urls.spotify
+  return response.item.external_urls.spotify;
 }
 
 async function disable_previous(client, new_message) {

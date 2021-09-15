@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -11,7 +12,7 @@ const MALSecret = process.env['MAL SECRET'];
 const PASSWORD = process.env['PASSWORD'];
 
 const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
-const CryptoJS = require("crypto-js");
+const ANI_LOGO = 'https://anilist.co/img/icons/android-chrome-512x512.png';
 
 // Databases
 const db = new Keyv({
@@ -34,6 +35,14 @@ const tokens = new Keyv({
 const vaCharactersButton = new MessageButton()
 					.setCustomId('vaCharacters')
           .setLabel("Characters")
+					.setStyle('PRIMARY');
+const anilist_show = new MessageButton()
+					.setCustomId('anilist')
+          .setLabel("Anilist")
+					.setStyle('PRIMARY');
+const mal_show = new MessageButton()
+					.setCustomId('mal')
+          .setLabel("MAL")
 					.setStyle('PRIMARY');
 const vaCharactersButton_disabled = new MessageButton()
           .setCustomId('vaCharacters')
@@ -120,6 +129,21 @@ async function sendGetRequest_search(query) {
   return response.json();
 }
 
+async function sendGetRequest_searchId(id) {
+  let url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
+  let access_token_encrypted = await tokens.get("mal_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let authorization = "Bearer " + access_token;
+  let response = await fetch(url, {
+      method: 'GET', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await postRefreshMAL();
+    return await sendGetRequest_searchId(id);
+  }
+  return response.json();
+}
+
 async function sendPostRequest_va(query) {
   var search = `
     query {
@@ -179,7 +203,59 @@ async function sendPostRequest_va(query) {
     });
     response = await response.json();
     return response.data.Staff;
+}
 
+async function sendPostRequest_show(query) {
+  var search = `
+    query {
+      Media (search: "${query}", type: ANIME, sort: [FORMAT, SEARCH_MATCH]) { 
+        idMal
+        title {
+          romaji
+          english
+        }
+        description
+        episodes
+        meanScore
+        rankings {
+          rank
+          allTime
+          type
+        }
+        status
+    		siteUrl
+        trailer {
+          id
+          site
+        }
+        coverImage {
+          extraLarge
+        }
+        studios {
+          nodes {
+            name
+            isAnimationStudio
+          }
+        }
+      }
+    }
+    `;
+    let url = `https://graphql.anilist.co`;
+    let response = await fetch(url, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json',
+                  'Accept': 'application/json'},
+        body: JSON.stringify({
+            query: search
+        })
+    });
+    response = await response.json();
+    response = response.data.Media;
+    if(response == null) {
+      return "No show found!";
+    } else {
+      return response;
+    }
 }
 
 function song_builder(songs) {
@@ -210,11 +286,24 @@ function color_picker(status) {
     case("currently_airing"): {
       return "#22fc00";
     }
+
+    case("RELEASING"): {
+      return "#22fc00";
+    }
+
     case("finished_airing"): {
       return "#2b00ff";
     }
 
+    case("FINISHED"): {
+      return "#2b00ff";
+    }
+
     case("not_yet_aired"): {
+      return "#ff1100";
+    }
+
+    case("NOT_YET_RELEASED"): {
       return "#ff1100";
     }
 
@@ -224,7 +313,7 @@ function color_picker(status) {
   }
 }
 
-function show_embed_builder(response) {
+function show_embed_builder_mal(response) {
   const result = new MessageEmbed();
   if(response == "No show found!") {
     return result.setDescription(response);
@@ -247,6 +336,59 @@ function show_embed_builder(response) {
   );
   result.setColor(color_picker(response.status));
   return result;
+}
+
+function show_embed_builder_anilist(response) {
+  let result = new MessageEmbed();
+  let trailer = trailer_save(response.trailer);
+  result.setTitle(response.title.romaji)
+  result.setURL(response.siteUrl);
+  result.setAuthor(anilist_studio(response.studios.nodes), ANI_LOGO);
+  result.setDescription(response.description.replaceAll('<br>', ''));
+  result.setThumbnail(response.coverImage.extraLarge);
+  let rank = rank_parser(response.rankings);
+  result.addFields(
+    {name: '\u200B', value: '\u200B' }, 
+    {name: ":trophy: Rank", value: `➤ ${rank}`, inline: true}, 
+    {name: ":alarm_clock: Episodes", value: `➤ ${response.episodes}`, inline: true}, 
+    {name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true}
+  );
+  result.setColor(color_picker(response.status));
+  return [result, response.idMal, trailer];
+}
+
+function trailer_save(data) {
+  if(data == null) {
+    db.set("show_trailer", "None");
+    return false;
+  }
+  if(data.site == "youtube") {
+    db.set("show_trailer", "https://youtu.be/" + data.id);
+  } else if (data.site == "dailymotion") {
+    db.set("show_trailer", "https://dai.ly/" + data.id);
+  }
+  return true;
+}
+
+function anilist_studio(data) {
+  let studios = [];
+  for(let i = 0; i < data.length; i++) {
+    if(data[i].isAnimationStudio == true) {
+      studios.push(data[i].name);
+    }
+  }
+  return studios.join(", ");
+}
+
+function rank_parser(data) {
+  let rank = "N/A";
+  for(let i = 0; i < data.length; i++) {
+    if(data[i].allTime == true && data[i].type == "RATED") {
+      rank = data[i].rank;
+      break;
+    }
+  }
+  return rank;
 }
 
 function description_check(input) {
@@ -381,13 +523,68 @@ module.exports = {
 	async execute(client, interaction) {
     let type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
+    let original_query = query;
 
     switch (type) {
       case ("show"): {
         query = query_create(query.split(" "));
-        let response = await sendGetRequest_search(query);
-        let embed = show_embed_builder(response);
-        return interaction.reply({ embeds: [embed] });
+        let response = await sendPostRequest_show(original_query);
+        if(response != "No show found!") {
+          let result = show_embed_builder_anilist(response);
+          anilist_embed = result[0];
+          db.set("anilist_show_embed", anilist_embed);
+          response = await sendGetRequest_searchId(result[1]);
+          let embed = show_embed_builder_mal(response);
+          db.set("mal_show_embed", embed);
+          let components = new MessageActionRow();
+          if(result[2] == true) {
+            let url = await db.get("show_trailer");
+            let trailer_button = new MessageButton();
+            trailer_button.setLabel("Trailer");
+            trailer_button.setStyle("LINK");
+            trailer_button.setURL(url);
+            components.addComponents(anilist_show, trailer_button);
+          } else {
+            components.addComponents(anilist_show);
+          }
+          await interaction.reply({ embeds: [embed], components: [components] });
+        } else {
+          response = await sendGetRequest_search(query);
+          let embed = show_embed_builder_mal(response);
+          await interaction.reply({ embeds: [embed] });
+        }
+
+        const message = await interaction.fetchReply();
+        let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
+        collector.on("collect", async press => {
+          let trailer = await db.get("show_trailer");
+          let trailer_button = new MessageButton();
+          if(trailer != "None") {
+            trailer_button.setLabel("Trailer");
+            trailer_button.setStyle("LINK");
+            trailer_button.setURL(trailer);
+          }
+          if(press.customId == "anilist") {
+            let embed = await db.get("anilist_show_embed");
+            let components = new MessageActionRow();
+            if(trailer == "None") {
+              components.addComponents(mal_show);
+            } else {
+              components.addComponents(mal_show, trailer_button);
+            }
+            await press.update({ embeds: [embed], components: [components] });
+          } else if(press.customId == "mal") {
+            let embed = await db.get("mal_show_embed");
+            let components = new MessageActionRow();
+            if(trailer == "None") {
+              components.addComponents(anilist_show);
+            } else {
+              components.addComponents(anilist_show, trailer_button);
+            }
+            await press.update({ embeds: [embed], components: [components] });
+          }
+        });
+        break;
       }
 
       case ("va"): {
@@ -444,7 +641,7 @@ module.exports = {
           } else if(press.customId == "va") {
             let embed = await db.get("current_va");
             await press.update({ embeds: [embed], components: [va_buttons] })
-          }
+          } 
         });
       }
     }
