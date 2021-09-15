@@ -4,9 +4,10 @@ sendGetRequest("/spotify_data")
 });
 
 async function sendGetRequest(url) {
-    let response = await fetch(url, {
-        method: 'GET'});
-    return response.json();
+  let response = await fetch(url, {
+      method: 'GET'});
+  console.log(response);
+  return response.json();
 }
 
 function generate_iframe(data) {

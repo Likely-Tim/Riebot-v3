@@ -56,7 +56,7 @@ const disabled = new MessageActionRow()
 			.addComponents(prev_disabled, next_disabled);
 
 async function sendPostRequest_refreshToken() {
-  let refresh_token_encrypted = tokens.get("spotify_refresh");
+  let refresh_token_encrypted = await tokens.get("spotify_refresh");
   let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
   let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};

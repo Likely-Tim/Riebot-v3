@@ -1,5 +1,17 @@
+sendGetRequest("https://api64.ipify.org?format=json")
+.then(data => {
+  console.log(data);
+});
+
 let index = 0;
 showSlides(index);
+
+async function sendGetRequest(url) {
+  let response = await fetch(url, {
+      method: 'GET'});
+  console.log(response);
+  return response.json();
+}
 
 function showSlides() {
   let slides = document.getElementsByClassName('slide');

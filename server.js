@@ -3,7 +3,7 @@ const app = express();
 const lineByLine = require('n-readlines');
 
 app.use(express.json());
-app.use(express.static('web'))
+app.use(express.static('web'));
 
 app.all("/", (request, response) => {
   response.sendFile(__dirname + "/web/index.html");
