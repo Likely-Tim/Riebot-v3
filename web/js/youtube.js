@@ -16,6 +16,8 @@ function generate_iframe(data) {
     let base = "https://www.youtube.com/embed/"
     let iframe = document.createElement("iframe");
     iframe.src = base + id[i];
+    iframe.allow = "picture-in-picture; encrypted-media";
+    iframe.allowFullscreen = "true";
     container.insertBefore(iframe, container.firstChild);
   }
 }

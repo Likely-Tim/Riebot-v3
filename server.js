@@ -24,6 +24,7 @@ app.get("/spotify_data", (request, response) => {
   while(line = spotify_line.next()) {
     file_array.push(line.toString('ascii'));
   }
+  file_array = [...new Set(file_array)];
   response.send({ "id": file_array });
 });
 
@@ -34,6 +35,7 @@ app.get("/youtube_data", (request, response) => {
   while(line = spotify_line.next()) {
     file_array.push(line.toString('ascii'));
   }
+  file_array = [...new Set(file_array)];
   response.send({ "id": file_array });
 });
 

@@ -166,20 +166,18 @@ async function content_retrieve(action) {
 }
 
 async function disable_previous(client, new_message) {
-  const channel_id = await db.get("current_spotify_channel");
-  if (channel_id != undefined) {
+  try {
+    const channel_id = await db.get("current_spotify_channel");
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await db.get("current_spotify_id");
-    try {
-      const old_message = await channel.messages.fetch(old_message_id);
-      old_message.edit({components: [disabled]});
-    } catch (error) {
-      console.log("Previous spotify response was deleted.");
-    }
+    const old_message = await channel.messages.fetch(old_message_id);
+    old_message.edit({components: [disabled]});
+  } catch (error) {
+    console.log("[Spotify] Could not find previous message.");
+  } finally {
+    await db.set("current_spotify_channel", new_message.channelId);
+    await db.set("current_spotify_id", new_message.id);
   }
-  await db.set("current_spotify_channel", new_message.channelId);
-  await db.set("current_spotify_id", new_message.id);
-  return;
 }
 
 module.exports = {

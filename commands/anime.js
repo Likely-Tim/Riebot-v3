@@ -344,7 +344,11 @@ function show_embed_builder_anilist(response) {
   result.setTitle(response.title.romaji)
   result.setURL(response.siteUrl);
   result.setAuthor(anilist_studio(response.studios.nodes), ANI_LOGO);
-  result.setDescription(response.description.replaceAll('<br>', ''));
+  if(response.description == null) {
+    result.setDescription("TBA");
+  } else {
+    result.setDescription(response.description.replaceAll('<br>', ''));
+  }
   result.setThumbnail(response.coverImage.extraLarge);
   let rank = rank_parser(response.rankings);
   result.addFields(
