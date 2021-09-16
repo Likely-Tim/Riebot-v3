@@ -27,6 +27,14 @@ const tokens = new Keyv({
   })
 });
 
+const messages = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/messages.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
 // Buttons
 const next = new MessageButton()
 					.setCustomId('next')
@@ -95,20 +103,18 @@ function response_parse(input) {
 }
 
 async function disable_previous(client, new_message) {
-  const channel_id = await db.get("current_spotify_channel");
-  if (channel_id != undefined) {
+  try {
+    const channel_id = await messages.get("spotify-top_channel_id");
     const channel = await client.channels.fetch(channel_id);
-    const old_message_id = await db.get("current_spotify_id");
-    try {
-      const old_message = await channel.messages.fetch(old_message_id);
-      old_message.edit({components: [disabled]});
-    } catch (error) {
-      console.log("Previous spotify response was deleted.");
-    }
+    const old_message_id = await messages.get("spotify-top_message_id");
+    const old_message = await channel.messages.fetch(old_message_id);
+    old_message.edit({components: [disabled]});
+  } catch (error) {
+    console.log("[Spotify-Top] Could not find previous message.");
+  } finally {
+    await messages.set("spotify-top_channel_id", new_message.channelId);
+    await messages.set("spotify-top_message_id", new_message.id);
   }
-  await db.set("current_spotify_channel", new_message.channelId);
-  await db.set("current_spotify_id", new_message.id);
-  return;
 }
 
 module.exports = {
@@ -127,30 +133,36 @@ module.exports = {
     const message = await interaction.fetchReply();
     await disable_previous(client, message);
     await db.set("counter", 0);
-    let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
-    collector.on("collect", async press => {
-      if(press.customId == "next") {
-        let counter = await db.get("counter");
-        counter++;
-        let result = await db.get("spotify_top_" + counter);
-        db.set("counter", counter);
-        if(counter == 4) {
-          await press.update({content: result, components: [only_prev]})
-        } else {
-          await press.update({content: result, components: [button_row]});
-        }
-      } else if(press.customId == "prev") {
-        let counter = await db.get("counter");
-        counter--;
-        let result = await db.get("spotify_top_" + counter);
-        db.set("counter", counter);
-        if(counter == 0) {
-          await press.update({content: result, components: [only_next]})
-        } else {
-          await press.update({content: result, components: [button_row]});
-        }
-      }
-    });
+    spotify_top_button_interaction(client, message);
     return;
 	},
 };
+
+function spotify_top_button_interaction(client, message) {
+  let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
+  collector.on("collect", async press => {
+    if(press.customId == "next") {
+      let counter = await db.get("counter");
+      counter++;
+      let result = await db.get("spotify_top_" + counter);
+      db.set("counter", counter);
+      if(counter == 4) {
+        await press.update({content: result, components: [only_prev]})
+      } else {
+        await press.update({content: result, components: [button_row]});
+      }
+    } else if(press.customId == "prev") {
+      let counter = await db.get("counter");
+      counter--;
+      let result = await db.get("spotify_top_" + counter);
+      db.set("counter", counter);
+      if(counter == 0) {
+        await press.update({content: result, components: [only_next]})
+      } else {
+        await press.update({content: result, components: [button_row]});
+      }
+    }
+  });
+}
+
+module.exports.spotify_top_button_interaction = spotify_top_button_interaction;
