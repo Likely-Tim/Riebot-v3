@@ -28,14 +28,9 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', () => {
-  // Log startup time
-  let options = { timezone: 'America/Los_Angeles', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
-  let time = new Date().getTime();
-  time -= (3600000 * 7);
-  fs.writeFile('StartUpTime.txt', new Date(time).toLocaleString('en-US', options) + '\n', { flag: 'a+' }, console_error);
-  
+  let log_start_promise = log_start_up();
   let initializing_promise = reinitialize_messages(client);
-  Promise.all([initializing_promise])
+  Promise.all([log_start_promise, initializing_promise])
   .then((values) => {
     console.log('Ready!');
   })
@@ -131,6 +126,13 @@ function message_mapper() {
   map.set("spotify-playing", spotify_playing_button_interaction);
   map.set("spotify-top", spotify_top_button_interaction);
   return map;
+}
+
+async function log_start_up() {
+  let options = { timezone: 'America/Los_Angeles', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+  let time = new Date().getTime();
+  time -= (3600000 * 7);
+  fs.writeFile('StartUpTime.txt', new Date(time).toLocaleString('en-US', options) + '\n', { flag: 'a+' }, console_error);
 }
 
 function console_error(err) {
