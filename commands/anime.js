@@ -31,6 +31,14 @@ const tokens = new Keyv({
   })
 });
 
+const messages = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/messages.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
 // Buttons
 const vaCharactersButton = new MessageButton()
 					.setCustomId('vaCharacters')
@@ -40,10 +48,20 @@ const anilist_show = new MessageButton()
 					.setCustomId('anilist')
           .setLabel("Anilist")
 					.setStyle('PRIMARY');
+const anilist_show_disabled = new MessageButton()
+					.setCustomId('anilist')
+          .setLabel("Anilist")
+					.setStyle('PRIMARY')
+          .setDisabled(true);
 const mal_show = new MessageButton()
 					.setCustomId('mal')
           .setLabel("MAL")
 					.setStyle('PRIMARY');
+const mal_show_disabled = new MessageButton()
+					.setCustomId('mal')
+          .setLabel("MAL")
+					.setStyle('PRIMARY')
+          .setDisabled(true);
 const vaCharactersButton_disabled = new MessageButton()
           .setCustomId('vaCharacters')
           .setLabel("Characters")
@@ -88,6 +106,10 @@ const va_buttons = new MessageActionRow()
 			.addComponents(vaCharactersButton);
 const va_buttons_disabled = new MessageActionRow()
       .addComponents(vaCharactersButton_disabled);
+const anilist_button_disabled = new MessageActionRow()
+      .addComponents(anilist_show_disabled);
+const mal_button_disabled = new MessageActionRow()
+      .addComponents(mal_show_disabled);
 
 async function postRefreshMAL() {
   let url = "https://myanimelist.net/v1/oauth2/token";
@@ -517,6 +539,32 @@ function query_create(args) {
   return encodeURIComponent(query);
 }
 
+async function disable_previous(client, new_message, prefix) {
+  try {
+    const channel_id = await messages.get(`anime-${prefix}_channel_id`);
+    const channel = await client.channels.fetch(channel_id);
+    const old_message_id = await messages.get(`anime-${prefix}_message_id`);
+    const old_message = await channel.messages.fetch(old_message_id);
+    let disabled = disabled_buttons(old_message);
+    old_message.edit({components: [disabled]});
+  } catch (error) {
+    console.log(`[Anime-${prefix}] Could not find previous message.`);
+  } finally {
+    await messages.set(`anime-${prefix}_channel_id`, new_message.channelId);
+    await messages.set(`anime-${prefix}_message_id`, new_message.id);
+  }
+}
+
+function disabled_buttons(message) {
+  let buttons = message.components[0].components;
+  for(let i = 0; i < buttons.length; i++) {
+    if(buttons[i].style != "LINK") {
+      buttons[i].disabled = true;
+    }
+  }
+  return new MessageActionRow({components: buttons});
+}
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('anime')
@@ -557,37 +605,9 @@ module.exports = {
           let embed = show_embed_builder_mal(response);
           await interaction.reply({ embeds: [embed] });
         }
-
         const message = await interaction.fetchReply();
-        let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
-        collector.on("collect", async press => {
-          let trailer = await db.get("show_trailer");
-          let trailer_button = new MessageButton();
-          if(trailer != "None") {
-            trailer_button.setLabel("Trailer");
-            trailer_button.setStyle("LINK");
-            trailer_button.setURL(trailer);
-          }
-          if(press.customId == "anilist") {
-            let embed = await db.get("anilist_show_embed");
-            let components = new MessageActionRow();
-            if(trailer == "None") {
-              components.addComponents(mal_show);
-            } else {
-              components.addComponents(mal_show, trailer_button);
-            }
-            await press.update({ embeds: [embed], components: [components] });
-          } else if(press.customId == "mal") {
-            let embed = await db.get("mal_show_embed");
-            let components = new MessageActionRow();
-            if(trailer == "None") {
-              components.addComponents(anilist_show);
-            } else {
-              components.addComponents(anilist_show, trailer_button);
-            }
-            await press.update({ embeds: [embed], components: [components] });
-          }
-        });
+        disable_previous(client, message, type);
+        anime_show_button_interaction(client, message);
         break;
       }
 
@@ -602,53 +622,91 @@ module.exports = {
           db.set("current_va", embed);
           await interaction.reply({ embeds: [embed], components: [va_buttons] });
         }
-
-        // Buttons
         const message = await interaction.fetchReply();
-        let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
-        collector.on("collect", async press => {
-          let value = await db.get("va_characters");
-          let name = await db.get("va_name");
-          if(press.customId == "vaCharacters") {
-            only_next.components[2].label = name;
-            only_prev.components[2].label = name;
-            disabled.components[2].label = name;
-            button_row.components[2].label = name;
-            let character_embed = await vaCharacters_embed_builder(0);
-            db.set("vaCharacters_counter", 0);
-            if(value == 1) {
-              await press.update({ embeds: [character_embed], components: [disabled] })
-            } else {
-              await press.update({ embeds: [character_embed], components: [only_next] });
-            }
-          } else if(press.customId == "next") {
-            let counter = await db.get("vaCharacters_counter");
-            counter += 1;
-            db.set("vaCharacters_counter", counter);
-            let character_embed = await vaCharacters_embed_builder(counter);
-            if(value - counter != 1) {
-              await press.update({ embeds: [character_embed], components: [button_row] });
-            } else {
-              await press.update({ embeds: [character_embed], components: [only_prev] });
-            }
-
-          } else if(press.customId == "prev") {
-            let counter = await db.get("vaCharacters_counter");
-            counter -= 1;
-            db.set("vaCharacters_counter", counter);
-            let character_embed = await vaCharacters_embed_builder(counter);
-            if(counter == 0) {
-              await press.update({ embeds: [character_embed], components: [only_next] });
-            } else {
-              await press.update({ embeds: [character_embed], components: [button_row] });
-            }
-          } else if(press.customId == "va") {
-            let embed = await db.get("current_va");
-            await press.update({ embeds: [embed], components: [va_buttons] })
-          } 
-        });
+        disable_previous(client, message, type);
+        anime_va_button_interaction(client, message);
+        break;
       }
     }
-    
 	},
 };
+
+function anime_show_button_interaction(client, message) {
+  let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
+  collector.on("collect", async press => {
+    let trailer = await db.get("show_trailer");
+    let trailer_button = new MessageButton();
+    if(trailer != "None") {
+      trailer_button.setLabel("Trailer");
+      trailer_button.setStyle("LINK");
+      trailer_button.setURL(trailer);
+    }
+    if(press.customId == "anilist") {
+      let embed = await db.get("anilist_show_embed");
+      let components = new MessageActionRow();
+      if(trailer == "None") {
+        components.addComponents(mal_show);
+      } else {
+        components.addComponents(mal_show, trailer_button);
+      }
+      await press.update({ embeds: [embed], components: [components] });
+    } else if(press.customId == "mal") {
+      let embed = await db.get("mal_show_embed");
+      let components = new MessageActionRow();
+      if(trailer == "None") {
+        components.addComponents(anilist_show);
+      } else {
+        components.addComponents(anilist_show, trailer_button);
+      }
+      await press.update({ embeds: [embed], components: [components] });
+    }
+  });
+}
+
+function anime_va_button_interaction(client, message) {
+  let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
+  collector.on("collect", async press => {
+    let value = await db.get("va_characters");
+    let name = await db.get("va_name");
+    if(press.customId == "vaCharacters") {
+      only_next.components[2].label = name;
+      only_prev.components[2].label = name;
+      disabled.components[2].label = name;
+      button_row.components[2].label = name;
+      let character_embed = await vaCharacters_embed_builder(0);
+      db.set("vaCharacters_counter", 0);
+      if(value == 1) {
+        await press.update({ embeds: [character_embed], components: [disabled] })
+      } else {
+        await press.update({ embeds: [character_embed], components: [only_next] });
+      }
+    } else if(press.customId == "next") {
+      let counter = await db.get("vaCharacters_counter");
+      counter += 1;
+      db.set("vaCharacters_counter", counter);
+      let character_embed = await vaCharacters_embed_builder(counter);
+      if(value - counter != 1) {
+        await press.update({ embeds: [character_embed], components: [button_row] });
+      } else {
+        await press.update({ embeds: [character_embed], components: [only_prev] });
+      }
+
+    } else if(press.customId == "prev") {
+      let counter = await db.get("vaCharacters_counter");
+      counter -= 1;
+      db.set("vaCharacters_counter", counter);
+      let character_embed = await vaCharacters_embed_builder(counter);
+      if(counter == 0) {
+        await press.update({ embeds: [character_embed], components: [only_next] });
+      } else {
+        await press.update({ embeds: [character_embed], components: [button_row] });
+      }
+    } else if(press.customId == "va") {
+      let embed = await db.get("current_va");
+      await press.update({ embeds: [embed], components: [va_buttons] })
+    } 
+  });
+}
+
+module.exports.anime_show_button_interaction = anime_show_button_interaction;
+module.exports.anime_va_button_interaction = anime_va_button_interaction;

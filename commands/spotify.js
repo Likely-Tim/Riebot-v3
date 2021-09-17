@@ -5,11 +5,18 @@ const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
+const mapJson = require('../helpers/map-json.js');
 
 // Secrets
 const PASSWORD = process.env['PASSWORD'];
 const SPOTID = process.env['SPOTIFY ID'];
 const SPOTSECRET = process.env['SPOTIFY SECRET'];
+
+const test = new Map();
+test.set("test", "testing");
+const str = JSON.stringify(test, mapJson.replacer);
+const newValue = JSON.parse(str, mapJson.reviver);
+console.log(str, newValue);
 
 // Databases
 const db = new Keyv({

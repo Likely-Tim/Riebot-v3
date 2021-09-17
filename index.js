@@ -8,6 +8,7 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 const { spotify_button_interaction } = require("./commands/spotify.js");
 const { spotify_playing_button_interaction} = require("./commands/spotify-playing.js");
 const { spotify_top_button_interaction } = require("./commands/spotify-top.js");
+const { anime_show_button_interaction, anime_va_button_interaction } = require("./commands/anime.js");
 
 // Databases
 const messages = new Keyv({
@@ -125,6 +126,8 @@ function message_mapper() {
   map.set("spotify", spotify_button_interaction);
   map.set("spotify-playing", spotify_playing_button_interaction);
   map.set("spotify-top", spotify_top_button_interaction);
+  map.set("anime-show", anime_show_button_interaction);
+  map.set("anime-va", anime_va_button_interaction);
   return map;
 }
 
