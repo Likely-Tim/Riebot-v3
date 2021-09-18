@@ -91,53 +91,6 @@ const button_row = new MessageActionRow()
 const disabled = new MessageActionRow()
 			.addComponents(prev_disabled, next_disabled, check_disabled);
 
-
-async function sendPostRequest_refreshToken() {
-  let refresh_token_encrypted = await tokens.get("spotify_refresh");
-  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
-  let response = await fetch(url, {
-      method: 'POST', 
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams(data)});
-  response = await response.json();
-  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  await tokens.set("spotify_access", access_token_encrypted);
-  return;
-}
-
-function reinitialize_db() {
-  tokens = new Keyv({
-    store: new KeyvFile({
-      filename: `storage/tokens.json`,
-      encode: JSON.stringify,
-      decode: JSON.parse
-    })
-  });
-}
-
-async function sendGetRequest_search(type, query) {
-  let access_token_encrypted = await tokens.get("spotify_access");
-  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&market=JP&limit=5`;
-  let authorization = "Bearer " + access_token;
-  let response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  if(response.status == 401) {
-    console.log("401");
-    response = await response.json();
-    await spotify.refreshToken();
-    console.log("Done");
-    reinitialize_db();
-    let result = await sendGetRequest_search(type, query);
-    return result;
-  }
-  response = await response.json();
-  return await response_parse(response, type);
-}
-
 async function response_parse(response, type) {
   let id = String(cache.size - 1);
   let store = {};
@@ -268,8 +221,9 @@ module.exports = {
     let query = interaction.options.getString("query");
     if(!cache_find(type, query)) {
       query = query_create(query.split(" "));
-      let response = await sendGetRequest_search(type, query);
-      await interaction.reply({ content: response, components: [only_next] });
+      let response = await spotify.search(type, query);
+      let result = await response_parse(response, type);
+      await interaction.reply({ content: result, components: [only_next] });
       const message = await interaction.fetchReply();
       await disable_previous(client, message);
       spotify_button_interaction(client, message);
