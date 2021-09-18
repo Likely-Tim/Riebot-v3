@@ -4,6 +4,9 @@ const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector, MessageEmbed } = require('discord.js');
+const embed = require('../helpers/embed.js');
+const anime = require('../helpers/anime.js');
+
 
 
 // Secrets
@@ -166,175 +169,6 @@ async function sendGetRequest_searchId(id) {
   return response.json();
 }
 
-async function sendPostRequest_va(query) {
-  var search = `
-    query {
-      Staff (search: "${query}") { 
-        name {
-          full
-          native
-        }
-        image {
-          large
-        }
-        description
-        age
-        homeTown
-        yearsActive
-        dateOfBirth {
-          year
-          month
-          day
-        }
-        siteUrl
-        characters (perPage: 10, sort: [ROLE, FAVOURITES_DESC]) {
-          edges {
-            role
-            node {
-              image {
-                large
-              }
-              siteUrl
-              description
-  						name {
-                full
-              }
-              id
-            }
-            media {
-              siteUrl
-              title {
-                romaji
-                english
-              }
-            }
-          }
-        }
-      }
-    }
-    `;
-
-    let url = `https://graphql.anilist.co`;
-    let response = await fetch(url, {
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json',
-                  'Accept': 'application/json'},
-        body: JSON.stringify({
-            query: search
-        })
-    });
-    response = await response.json();
-    return response.data.Staff;
-}
-
-async function sendPostRequest_show(query) {
-  var search = `
-    query {
-      Media (search: "${query}", type: ANIME, sort: [FORMAT, SEARCH_MATCH]) { 
-        idMal
-        title {
-          romaji
-          english
-        }
-        description
-        episodes
-        meanScore
-        rankings {
-          rank
-          allTime
-          type
-        }
-        status
-    		siteUrl
-        trailer {
-          id
-          site
-        }
-        coverImage {
-          extraLarge
-        }
-        studios {
-          nodes {
-            name
-            isAnimationStudio
-          }
-        }
-      }
-    }
-    `;
-    let url = `https://graphql.anilist.co`;
-    let response = await fetch(url, {
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json',
-                  'Accept': 'application/json'},
-        body: JSON.stringify({
-            query: search
-        })
-    });
-    response = await response.json();
-    response = response.data.Media;
-    if(response == null) {
-      return "No show found!";
-    } else {
-      return response;
-    }
-}
-
-function song_builder(songs) {
-  let result = "";
-  if(typeof songs == "undefined") {
-    result = "N/A";
-  } else {
-    for(i = 0; i < songs.length; i++) {
-      result += songs[i].text + '\n';
-    }
-  }
-  return result;
-}
-
-function studio_builder(studios) {
-  if(studios.length == [0]) {
-    return "N/A";
-  }
-  let studio = studios[0].name;
-  for(i = 1; i < studios.length; i++) {
-    studio += ", " + studios[i].name;
-  }
-  return studio;
-}
-
-function color_picker(status) {
-  switch (status) {
-    case("currently_airing"): {
-      return "#22fc00";
-    }
-
-    case("RELEASING"): {
-      return "#22fc00";
-    }
-
-    case("finished_airing"): {
-      return "#2b00ff";
-    }
-
-    case("FINISHED"): {
-      return "#2b00ff";
-    }
-
-    case("not_yet_aired"): {
-      return "#ff1100";
-    }
-
-    case("NOT_YET_RELEASED"): {
-      return "#ff1100";
-    }
-
-    default: {
-      return "#ffffff";
-    }
-  }
-}
-
 function show_embed_builder_mal(response) {
   const result = new MessageEmbed();
   if(response == "No show found!") {
@@ -343,20 +177,20 @@ function show_embed_builder_mal(response) {
   result.setTitle(response.title);
   let link = "https://myanimelist.net/anime/" + response.id;
   result.setURL(link);
-  result.setAuthor(studio_builder(response.studios), MAL_LOGO);
+  result.setAuthor(embed.studio_list("mal", response.studios), MAL_LOGO);
   result.setDescription(response.synopsis);
   result.setThumbnail(response.main_picture.large);
-  let opening_themes = song_builder(response.opening_themes);
-  let ending_themes = song_builder(response.ending_themes); 
+  let opening_themes = embed.song_list(response.opening_themes);
+  let ending_themes = embed.song_list(response.ending_themes); 
   result.addFields(
     {name: ":notes: Opening Themes", value: opening_themes, inline: true}, 
     {name: ":notes: Ending Themes", value: ending_themes, inline:true}, 
     {name: '\u200B', value: '\u200B' }, 
-    {name: ":trophy: Rank", value: `➤ ${response.rank}`, inline: true}, 
-    {name: ":alarm_clock: Episodes", value: `➤ ${response.num_episodes}`, inline: true}, 
-    {name: ":100: Rating", value: `➤ ${response.mean}`, inline: true}
+    {name: ":trophy: Rank", value: `➤ ${embed.null_check(response.rank)}`, inline: true}, 
+    {name: ":alarm_clock: Episodes", value: `➤ ${embed.episode_check(response.num_episodes)}`, inline: true}, 
+    {name: ":100: Rating", value: `➤ ${embed.null_check(response.mean)}`, inline: true}
   );
-  result.setColor(color_picker(response.status));
+  result.setColor(embed.color_picker(response.status));
   return result;
 }
 
@@ -365,21 +199,21 @@ function show_embed_builder_anilist(response) {
   let trailer = trailer_save(response.trailer);
   result.setTitle(response.title.romaji)
   result.setURL(response.siteUrl);
-  result.setAuthor(anilist_studio(response.studios.nodes), ANI_LOGO);
+  result.setAuthor(embed.studio_list("anilist", response.studios.nodes), ANI_LOGO);
   if(response.description == null) {
     result.setDescription("TBA");
   } else {
     result.setDescription(response.description.replaceAll('<br>', ''));
   }
   result.setThumbnail(response.coverImage.extraLarge);
-  let rank = rank_parser(response.rankings);
+  let rank = embed.anilist_rank(response.rankings);
   result.addFields(
     {name: '\u200B', value: '\u200B' }, 
     {name: ":trophy: Rank", value: `➤ ${rank}`, inline: true}, 
     {name: ":alarm_clock: Episodes", value: `➤ ${response.episodes}`, inline: true}, 
     {name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true}
   );
-  result.setColor(color_picker(response.status));
+  result.setColor(embed.color_picker(response.status));
   return [result, response.idMal, trailer];
 }
 
@@ -396,97 +230,6 @@ function trailer_save(data) {
   return true;
 }
 
-function anilist_studio(data) {
-  let studios = [];
-  for(let i = 0; i < data.length; i++) {
-    if(data[i].isAnimationStudio == true) {
-      studios.push(data[i].name);
-    }
-  }
-  return studios.join(", ");
-}
-
-function rank_parser(data) {
-  let rank = "N/A";
-  for(let i = 0; i < data.length; i++) {
-    if(data[i].allTime == true && data[i].type == "RATED") {
-      rank = data[i].rank;
-      break;
-    }
-  }
-  return rank;
-}
-
-function description_check(input) {
-  if(input == null) {
-    return "";
-  }
-  if(input.length > 1800) {
-    input = input.substring(0, 1950);
-    input += "...";
-  }
-  let start = 0;
-  while(true) {
-    let temp = input.indexOf("~!");
-    if(temp == -1) {
-      break;
-    }
-    input = input.replace("~!", "||");
-    start++;
-  }
-  let end = 0;
-  while(true) {
-    let temp = input.indexOf("!~");
-    if(temp == -1) {
-      break;
-    }
-    input = input.replace("!~", "||");
-    end++;
-  }
-  if(start > end) {
-    input += "||";
-  }
-  return input;
-}
-
-function date_generator(input) {
-  let date = "";
-  if(input.month != null) {
-    date += input.month;
-  }
-  if(input.day != null) {
-    date += "/" + input.day;
-  }
-  if(input.year != null) {
-    date += "/" + input.year;
-  }
-  if(date == "") {
-    return "";
-  }
-  return `**DOB:** ${date}\n`;
-}
-
-function active_since(input) {
-  if(input.length == 0) {
-    return "";
-  }
-  return `**Active Since:** ${input[0]}\n`;
-}
-
-function age(input) {
-  if(input == null) {
-    return "";
-  }
-  return `**Age:** ${input}\n`;
-}
-
-function home_town(input) {
-  if(input == null) {
-    return "";
-  }
-  return `**Home Town:** ${input}\n`;
-}
-
 function va_embed_builder(response) {
   db.set("va_name", response.name.full);
   const result = new MessageEmbed();
@@ -497,23 +240,8 @@ function va_embed_builder(response) {
   result.setTitle(`${response.name.full} (${response.name.native})`);
   result.setURL(response.siteUrl);
   result.setThumbnail(response.image.large);
-  result.setDescription(`${age(response.age)}${date_generator(response.dateOfBirth)}${active_since(response.yearsActive)}${home_town(response.homeTown)}${description_check(response.description)}`);
+  result.setDescription(`${embed.age(response.age)}${embed.anilist_date(response.dateOfBirth)}${embed.active_since(response.yearsActive)}${embed.home_town(response.homeTown)}${embed.anilist_text(response.description)}`);
   return result;
-}
-
-function character_media(input) {
-  let media = "**Media**\n";
-  for(let i = 0; i < input.length; i++) {
-    media += `-[${input[i].title.romaji}${title_null(input[i].title.english)}](${input[i].siteUrl})\n`;
-  }
-  return media;
-}
-
-function title_null(input) {
-  if(input == null) {
-    return "";
-  }
-  return ` (${input})`;
 }
 
 async function vaCharacters_embed_builder(input) {
@@ -522,9 +250,8 @@ async function vaCharacters_embed_builder(input) {
   result.setTitle(character.node.name.full);
   result.setURL(character.node.siteUrl);
   result.setThumbnail(character.node.image.large);
-  result.setDescription(`Role: ${character.role}\n\n${description_check(character.node.description)}\n\n${character_media(character.media)}`);
+  result.setDescription(`Role: ${character.role}\n\n${embed.anilist_text(character.node.description)}\n\n${embed.character_media(character.media)}`);
   return result;
-  
 }
 
 async function save_va_characters(response) {
@@ -580,7 +307,7 @@ module.exports = {
     switch (type) {
       case ("show"): {
         query = query_create(query.split(" "));
-        let response = await sendPostRequest_show(original_query);
+        let response = await anime.anilist_show(original_query);
         if(response != "No show found!") {
           let result = show_embed_builder_anilist(response);
           anilist_embed = result[0];
@@ -612,7 +339,7 @@ module.exports = {
       }
 
       case ("va"): {
-        let response = await sendPostRequest_va(query);
+        let response = await anime.anilist_va(query);
         if(response == null) {
           let embed = new MessageEmbed().setDescription("No va found");
           await interaction.reply({ embeds: [embed] });

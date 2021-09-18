@@ -6,7 +6,7 @@ const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 const mapJson = require('../helpers/map-json.js');
-const spotify = require('../helpers/spotify.js')
+const spotify = require('../helpers/spotify.js');
 
 // Secrets
 const PASSWORD = process.env['PASSWORD'];
