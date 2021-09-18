@@ -6,6 +6,7 @@ const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 const mapJson = require('../helpers/map-json.js');
+const spotify = require('../helpers/spotify.js')
 
 // Secrets
 const PASSWORD = process.env['PASSWORD'];
@@ -29,7 +30,7 @@ const db = new Keyv({
   })
 });
 
-const tokens = new Keyv({
+let tokens = new Keyv({
   store: new KeyvFile({
     filename: `storage/tokens.json`,
     encode: JSON.stringify,
@@ -106,6 +107,16 @@ async function sendPostRequest_refreshToken() {
   return;
 }
 
+function reinitialize_db() {
+  tokens = new Keyv({
+    store: new KeyvFile({
+      filename: `storage/tokens.json`,
+      encode: JSON.stringify,
+      decode: JSON.parse
+    })
+  });
+}
+
 async function sendGetRequest_search(type, query) {
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
@@ -114,11 +125,16 @@ async function sendGetRequest_search(type, query) {
   let response = await fetch(url, {
       method: 'GET', 
       headers: {"Authorization": authorization}});
-  response = await response.json();
-  if(response.error !== undefined && response.error.status === 401) {
-    await sendPostRequest_refreshToken();
-    return await sendGetRequest_search(type, query);
+  if(response.status == 401) {
+    console.log("401");
+    response = await response.json();
+    await spotify.refreshToken();
+    console.log("Done");
+    reinitialize_db();
+    let result = await sendGetRequest_search(type, query);
+    return result;
   }
+  response = await response.json();
   return await response_parse(response, type);
 }
 
