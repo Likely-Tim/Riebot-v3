@@ -12,11 +12,13 @@ const PASSWORD = process.env['PASSWORD'];
 const SPOTID = process.env['SPOTIFY ID'];
 const SPOTSECRET = process.env['SPOTIFY SECRET'];
 
-const test = new Map();
-test.set("test", "testing");
-const str = JSON.stringify(test, mapJson.replacer);
-const newValue = JSON.parse(str, mapJson.reviver);
-console.log(str, newValue);
+let cache = initialize_cache();
+
+function initialize_cache() {
+  const json_string = fs.readFileSync('storage/spotify-cache.json').toString();
+  const map = JSON.parse(json_string, mapJson.reviver);
+  return map;
+}
 
 // Databases
 const db = new Keyv({
@@ -38,6 +40,14 @@ const tokens = new Keyv({
 const messages = new Keyv({
   store: new KeyvFile({
     filename: `storage/messages.json`,
+    encode: JSON.stringify,
+    decode: JSON.parse
+  })
+});
+
+const storage = new Keyv({
+  store: new KeyvFile({
+    filename: `storage/spotify-storage.json`,
     encode: JSON.stringify,
     decode: JSON.parse
   })
@@ -113,6 +123,9 @@ async function sendGetRequest_search(type, query) {
 }
 
 async function response_parse(response, type) {
+  let id = String(cache.size - 1);
+  let store = {};
+  let url_array = [];
   await db.set("spotify_next", 0);
   for(let j = 0; j < 5; j++) {
     await db.set("spotify_" + j, "");
@@ -121,39 +134,71 @@ async function response_parse(response, type) {
     case("track"): {
       let current = "Nothing Found.";
       if(response.tracks.items.length === 0) {
+        store.found = false;
+        storage.set(id, store);
         return current;
       }
       current = response.tracks.items[0].external_urls.spotify;
       for(let i = 0; i < response.tracks.items.length; i++) {
         db.set("spotify_" + i, response.tracks.items[i].external_urls.spotify);
+        url_array.push(response.tracks.items[i].external_urls.spotify);
       }
+      store.found = true;
+      store.links = url_array;
+      storage.set(id, store);
       return current;
     }
 
     case("artist"): {
       let current = "Nothing Found.";
       if(response.artists.items.length === 0) {
+        store.found = false;
+        storage.set(id, store);
         return current;
       }
       current = response.artists.items[0].external_urls.spotify;
       for(let i = 0; i < response.artists.items.length; i++) {
         db.set("spotify_" + i, response.artists.items[i].external_urls.spotify);
+        url_array.push(response.artists.items[i].external_urls.spotify);
       }
+      store.found = true;
+      store.links = url_array;
+      storage.set(id, store);
       return current;
     }
 
     case("album"): {
       let current = "Nothing Found.";
       if(response.albums.items.length === 0) {
+        store.found = false;
+        storage.set(id, store);
         return current;
       }
       current = response.albums.items[0].external_urls.spotify;
       for(let i = 0; i < response.albums.items.length; i++) {
         db.set("spotify_" + i, response.albums.items[i].external_urls.spotify);
+        url_array.push(response.albums.items[i].external_urls.spotify);
       }
+      store.found = true;
+      store.links = url_array;
+      storage.set(id, store);
       return current;
     }
   }
+}
+
+async function storage_to_main(id) {
+  let result = await storage.get(id);
+  let current = "Nothing Found.";
+  if(result.found) {
+    await db.set("spotify_next", 0);
+    let links = result.links;
+    current = links[0];
+    for(let i = 0; i < links.length; i++) {
+      db.set("spotify_" + i, links[i])
+    }
+  } 
+  return current;
 }
 
 function query_create(args) {
@@ -205,15 +250,40 @@ module.exports = {
 	async execute(client, interaction) {
     const type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
-    query = query_create(query.split(" "));
-    let response = await sendGetRequest_search(type, query);
-    await interaction.reply({ content: response, components: [only_next] });
-    const message = await interaction.fetchReply();
-    await disable_previous(client, message);
-    spotify_button_interaction(client, message);
+    if(!cache_find(type, query)) {
+      query = query_create(query.split(" "));
+      let response = await sendGetRequest_search(type, query);
+      await interaction.reply({ content: response, components: [only_next] });
+      const message = await interaction.fetchReply();
+      await disable_previous(client, message);
+      spotify_button_interaction(client, message);
+    } else {
+      let result = await storage_to_main(cache.get(`${type}_${query}`));
+      await interaction.reply({ content: result, components: [only_next] });
+      const message = await interaction.fetchReply();
+      await disable_previous(client, message);
+      spotify_button_interaction(client, message);
+    }
     return;
 	},
 };
+
+function cache_find(type, query) {
+  if(!cache.has(`${type}_${query}`)) {
+    cache.set(`${type}_${query}`, String(cache.size));
+    let str = JSON.stringify(cache, mapJson.replacer);
+    fs.writeFile('storage/spotify-cache.json', str, (err) => {
+      if(err) {
+        console.log(err);
+      }
+    });
+    console.log(`[Spotify] Cache miss.`);
+    return false;
+  } else {
+    console.log(`[Spotify] Cache hit.`);
+    return true;
+  }
+}
 
 function spotify_button_interaction(client, message) {
   let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
