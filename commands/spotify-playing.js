@@ -4,6 +4,7 @@ const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 const spotify = require('../helpers/spotify.js');
+const button = require('../helpers/buttons.js');
 
 // Databases
 const messages = new Keyv({
@@ -13,29 +14,6 @@ const messages = new Keyv({
     decode: JSON.parse
   })
 });
-
-const refresh = new MessageButton()
-					.setCustomId('refresh')
-					.setStyle('SECONDARY')
-          .setEmoji("🔄");
-const refresh_disabled = new MessageButton()
-					.setCustomId('refresh')
-					.setStyle('SECONDARY')
-          .setEmoji("🔄")
-          .setDisabled(true);
-const check = new MessageButton()
-          .setCustomId('save')
-          .setStyle('SECONDARY')
-          .setEmoji("✅");
-const check_disabled = new MessageButton()
-          .setCustomId('save')
-          .setStyle('SECONDARY')
-          .setEmoji("✅")
-          .setDisabled(true);
-const refresh_button = new MessageActionRow()
-			.addComponents(refresh, check);
-const refresh_button_disabled = new MessageActionRow()
-			.addComponents(refresh_disabled, check_disabled);
 
 async function disable_previous(client, new_message) {
   try {
@@ -59,7 +37,7 @@ module.exports = {
 
 	async execute(client, interaction) {
     let response = await spotify.currentlyPlaying();
-		await interaction.reply({ content: response, components: [refresh_button] });
+		await interaction.reply({ content: response, components: [button.add_buttons(["refresh", "check"])] });
     const message = await interaction.fetchReply();
     disable_previous(client, message);
     spotify_playing_button_interaction(client, message);
@@ -78,10 +56,10 @@ function spotify_playing_button_interaction(client, message) {
           }
         });
       }
-      await press.update({ components: [refresh_button_disabled] })
+      await press.update({ components: [button.add_buttons(["disabled_refresh", "disabled_check"])] })
     } else {
-      let response = await sendGetRequest_currentPlaying();
-      await press.update({ content: response, components: [refresh_button] });
+      let response = await spotify.currentlyPlaying();
+      await press.update({ content: response });
     }
   });
 }

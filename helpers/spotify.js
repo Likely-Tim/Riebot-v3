@@ -55,7 +55,7 @@ async function currentlyPlaying() {
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
     await refreshToken();
-    return await search(type, query);
+    return await currentlyPlaying();
   }
   if(response.status == 204) {
     return "Nothing Playing.";
