@@ -39,16 +39,32 @@ async function search(type, query) {
       method: 'GET', 
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
-    console.log("401");
-    response = await response.json();
     await refreshToken();
-    console.log("Done");
-    let result = await search(type, query);
-    return result;
+    return await search(type, query);
   }
   return await response.json();
 }
 
+async function currentlyPlaying() {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let url = `https://api.spotify.com/v1/me/player/currently-playing?market=US`;
+  let authorization = "Bearer " + access_token;
+  let response = await fetch(url, {
+      method: 'GET', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await refreshToken();
+    return await search(type, query);
+  }
+  if(response.status == 204) {
+    return "Nothing Playing.";
+  }
+  response = await response.json();
+  return response.item.external_urls.spotify;
+}
+
 module.exports.search = search;
+module.exports.currentlyPlaying = currentlyPlaying;
 
 
