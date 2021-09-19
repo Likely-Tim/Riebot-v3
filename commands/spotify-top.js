@@ -4,6 +4,8 @@ const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
+const spotify = require('../helpers/spotify.js');
+const button = require('../helpers/buttons.js');
 
 // Secrets
 const SPOTID = process.env['SPOTIFY ID'];
@@ -63,37 +65,6 @@ const button_row = new MessageActionRow()
 const disabled = new MessageActionRow()
 			.addComponents(prev_disabled, next_disabled);
 
-async function sendPostRequest_refreshToken() {
-  let refresh_token_encrypted = await tokens.get("spotify_refresh");
-  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
-  let response = await fetch(url, {
-      method: 'POST', 
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams(data)});
-  response = await response.json();
-  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  await tokens.set("spotify_access", access_token_encrypted);
-  return;
-}
-
-async function sendGetRequest_top(type, time) {
-  let access_token_encrypted = await tokens.get("spotify_access");
-  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = `https://api.spotify.com/v1/me/top/${type}?time_range=${time}&limit=5`;
-  let authorization = "Bearer " + access_token;
-  let response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  response = await response.json();
-  if(response.error !== undefined && response.error.status === 401) {
-    await sendPostRequest_refreshToken();
-    return await sendGetRequest_top(type, time);
-  }
-  return response_parse(response);
-}
-
 function response_parse(input) {
   input = input.items;
   for(let i = 0; i < input.length; i++) {
@@ -127,8 +98,9 @@ module.exports = {
 	async execute(client, interaction) {
     const type = interaction.options.getString("type");
     const time = interaction.options.getString("time");
-    let response = await sendGetRequest_top(type, time);
-		await interaction.reply({ content: response, components: [only_next] });
+    let response = await spotify.topPlayed(type, time);
+    let result = response_parse(response);  
+		await interaction.reply({ content: result, components: [only_next] });
 
     const message = await interaction.fetchReply();
     await disable_previous(client, message);

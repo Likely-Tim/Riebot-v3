@@ -64,7 +64,24 @@ async function currentlyPlaying() {
   return response.item.external_urls.spotify;
 }
 
+async function topPlayed(type, time) {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let url = `https://api.spotify.com/v1/me/top/${type}?time_range=${time}&limit=5`;
+  let authorization = "Bearer " + access_token;
+  let response = await fetch(url, {
+      method: 'GET', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await refreshToken();
+    return await topPlayed(type, time);
+  }
+  return await response.json();
+
+}
+
 module.exports.search = search;
 module.exports.currentlyPlaying = currentlyPlaying;
+module.exports.topPlayed = topPlayed;
 
 
