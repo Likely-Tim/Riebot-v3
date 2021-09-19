@@ -8,11 +8,6 @@ const { MessageActionRow, MessageButton, InteractionCollector } = require('disco
 const mapJson = require('../helpers/map-json.js');
 const spotify = require('../helpers/spotify.js');
 
-// Secrets
-const PASSWORD = process.env['PASSWORD'];
-const SPOTID = process.env['SPOTIFY ID'];
-const SPOTSECRET = process.env['SPOTIFY SECRET'];
-
 let cache = initialize_cache();
 
 function initialize_cache() {
@@ -25,14 +20,6 @@ function initialize_cache() {
 const db = new Keyv({
   store: new KeyvFile({
     filename: `storage/spotify.json`,
-    encode: JSON.stringify,
-    decode: JSON.parse
-  })
-});
-
-let tokens = new Keyv({
-  store: new KeyvFile({
-    filename: `storage/tokens.json`,
     encode: JSON.stringify,
     decode: JSON.parse
   })
@@ -92,23 +79,21 @@ const disabled = new MessageActionRow()
 			.addComponents(prev_disabled, next_disabled, check_disabled);
 
 async function response_parse(response, type) {
+  db.set("spotify_index", 0);
   let id = String(cache.size - 1);
   let store = {};
   let url_array = [];
-  await db.set("spotify_next", 0);
-  for(let j = 0; j < 5; j++) {
-    await db.set("spotify_" + j, "");
-  }
   switch(type) {
     case("track"): {
-      let current = "Nothing Found.";
-      if(response.tracks.items.length === 0) {
+      let length = response.tracks.items.length;
+      if(length === 0) {
         store.found = false;
         storage.set(id, store);
-        return current;
+        return "Nothing Found.";
       }
-      current = response.tracks.items[0].external_urls.spotify;
-      for(let i = 0; i < response.tracks.items.length; i++) {
+      db.set("spotify_length", length);
+      let current = response.tracks.items[0].external_urls.spotify;
+      for(let i = 0; i < length; i++) {
         db.set("spotify_" + i, response.tracks.items[i].external_urls.spotify);
         url_array.push(response.tracks.items[i].external_urls.spotify);
       }
@@ -119,14 +104,15 @@ async function response_parse(response, type) {
     }
 
     case("artist"): {
-      let current = "Nothing Found.";
-      if(response.artists.items.length === 0) {
+      let length = response.artists.items.length;
+      if(length === 0) {
         store.found = false;
         storage.set(id, store);
-        return current;
+        return "Nothing Found.";
       }
-      current = response.artists.items[0].external_urls.spotify;
-      for(let i = 0; i < response.artists.items.length; i++) {
+      db.set("spotify_length", length);
+      let current = response.artists.items[0].external_urls.spotify;
+      for(let i = 0; i < length; i++) {
         db.set("spotify_" + i, response.artists.items[i].external_urls.spotify);
         url_array.push(response.artists.items[i].external_urls.spotify);
       }
@@ -137,14 +123,15 @@ async function response_parse(response, type) {
     }
 
     case("album"): {
-      let current = "Nothing Found.";
-      if(response.albums.items.length === 0) {
+      let length = response.albums.items.length;
+      if(length === 0) {
         store.found = false;
         storage.set(id, store);
-        return current;
+        return "Nothing Found.";
       }
-      current = response.albums.items[0].external_urls.spotify;
-      for(let i = 0; i < response.albums.items.length; i++) {
+      db.set("spotify_length", length);
+      let current = response.albums.items[0].external_urls.spotify;
+      for(let i = 0; i < length; i++) {
         db.set("spotify_" + i, response.albums.items[i].external_urls.spotify);
         url_array.push(response.albums.items[i].external_urls.spotify);
       }
@@ -160,8 +147,9 @@ async function storage_to_main(id) {
   let result = await storage.get(id);
   let current = "Nothing Found.";
   if(result.found) {
-    await db.set("spotify_next", 0);
+    db.set("spotify_index", 0);
     let links = result.links;
+    db.set("spotify_length", links.length);
     current = links[0];
     for(let i = 0; i < links.length; i++) {
       db.set("spotify_" + i, links[i])
@@ -176,15 +164,17 @@ function query_create(args) {
 }
 
 async function content_retrieve(action) {
-  let index = await db.get("spotify_next");
+  let index = await db.get("spotify_index");
+  let length = await db.get("spotify_length");
   if(action == "next") {
     index += 1;
   } else if(action == "prev") {
     index -= 1;
   }
-  content = await db.get("spotify_" + index);
-  await db.set("spotify_next", index);
-  if(index == 4) {
+  db.set("spotify_index", index);
+  let content = await db.get("spotify_" + index);
+  let buttons = [];
+  if(index == length - 1) {
     buttons = [only_prev];
   } else if(index == 0) {
     buttons = [only_next];
