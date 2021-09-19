@@ -16,7 +16,6 @@ const tokens = new Keyv({
 });
 
 async function refreshToken() {
-  console.log("Refreshing");
   let refresh_token_encrypted = await tokens.get("spotify_refresh");
   let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
@@ -26,10 +25,8 @@ async function refreshToken() {
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
   response = await response.json();
-  console.log(response);
   let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
   await tokens.set("spotify_access", access_token_encrypted);
-  console.log("Refreshing Done");
   return;
 }
 

@@ -5,6 +5,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
 const mapJson = require('../helpers/map-json.js');
 const spotify = require('../helpers/spotify.js');
+const button = require('../helpers/buttons.js');
 
 let cache = initialize_cache();
 
@@ -39,43 +40,6 @@ const storage = new Keyv({
   })
 });
 
-// Buttons
-const next = new MessageButton()
-					.setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️");
-const prev = new MessageButton()
-					.setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️");
-const next_disabled = new MessageButton()
-          .setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️")
-          .setDisabled(true);
-const prev_disabled = new MessageButton()
-          .setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️")
-          .setDisabled(true);
-const check = new MessageButton()
-          .setCustomId('save')
-          .setStyle('SECONDARY')
-          .setEmoji("✅");
-const check_disabled = new MessageButton()
-          .setCustomId('save')
-          .setStyle('SECONDARY')
-          .setEmoji("✅")
-          .setDisabled(true);
-const only_next = new MessageActionRow()
-			.addComponents(prev_disabled, next, check);
-const only_prev = new MessageActionRow()
-			.addComponents(prev, next_disabled, check);
-const button_row = new MessageActionRow()
-			.addComponents(prev, next, check);
-const disabled = new MessageActionRow()
-			.addComponents(prev_disabled, next_disabled, check_disabled);
-
 async function response_parse(response, type) {
   db.set("spotify_index", 0);
   let id = String(cache.size - 1);
@@ -98,7 +62,7 @@ async function response_parse(response, type) {
       store.found = true;
       store.links = url_array;
       storage.set(id, store);
-      return current;
+      return [length, current];
     }
 
     case("artist"): {
@@ -117,7 +81,7 @@ async function response_parse(response, type) {
       store.found = true;
       store.links = url_array;
       storage.set(id, store);
-      return current;
+      return [length, current];
     }
 
     case("album"): {
@@ -136,7 +100,7 @@ async function response_parse(response, type) {
       store.found = true;
       store.links = url_array;
       storage.set(id, store);
-      return current;
+      return [length, current];
     }
   }
 }
@@ -144,16 +108,18 @@ async function response_parse(response, type) {
 async function storage_to_main(id) {
   let result = await storage.get(id);
   let current = "Nothing Found.";
+  let length = 0;
   if(result.found) {
     db.set("spotify_index", 0);
     let links = result.links;
-    db.set("spotify_length", links.length);
+    length = links.length;
+    db.set("spotify_length", length);
     current = links[0];
     for(let i = 0; i < links.length; i++) {
       db.set("spotify_" + i, links[i])
     }
   } 
-  return current;
+  return [length, current];
 }
 
 function query_create(args) {
@@ -173,11 +139,11 @@ async function content_retrieve(action) {
   let content = await db.get("spotify_" + index);
   let buttons = [];
   if(index == length - 1) {
-    buttons = [only_prev];
+    buttons = [button.add_buttons(["prev", "disabled_next", "check"])];
   } else if(index == 0) {
-    buttons = [only_next];
+    buttons = [button.add_buttons(["disabled_prev", "next", "check"])];
   } else {
-    buttons = [button_row];
+    buttons = [button.add_buttons(["prev", "next", "check"])];
   }
   return [content, buttons];
 }
@@ -188,7 +154,8 @@ async function disable_previous(client, new_message) {
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await messages.get("spotify_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
-    old_message.edit({components: [disabled]});
+    let buttons = button.disable_all_buttons(old_message.components[0]);
+    old_message.edit({components: [buttons]});
   } catch (error) {
     console.log("[Spotify] Could not find previous message.");
   } finally {
@@ -211,13 +178,25 @@ module.exports = {
       query = query_create(query.split(" "));
       let response = await spotify.search(type, query);
       let result = await response_parse(response, type);
-      await interaction.reply({ content: result, components: [only_next] });
+      let components = []
+      if(result[0] == 1) {
+        components.push(button.add_buttons(["disabled_prev", "disabled_next", "check"]));
+      } else {
+        components.push(button.add_buttons(["disabled_prev", "next", "check"]));
+      }
+      await interaction.reply({ content: result[1], components: components });
       const message = await interaction.fetchReply();
       await disable_previous(client, message);
       spotify_button_interaction(client, message);
     } else {
       let result = await storage_to_main(cache.get(`${type}_${query}`));
-      await interaction.reply({ content: result, components: [only_next] });
+      let components = []
+      if(result[0] == 1) {
+        components.push(button.add_buttons(["disabled_prev", "disabled_next", "check"]));
+      } else {
+        components.push(button.add_buttons(["disabled_prev", "next", "check"]));
+      }
+      await interaction.reply({ content: result[1], components: components });
       const message = await interaction.fetchReply();
       await disable_previous(client, message);
       spotify_button_interaction(client, message);
