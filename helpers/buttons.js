@@ -3,11 +3,11 @@ const { MessageActionRow, MessageButton } = require('discord.js');
 const next_button = new MessageButton().setCustomId('next').setStyle('SECONDARY').setEmoji("➡️");
 const prev_button = new MessageButton().setCustomId('prev').setStyle('SECONDARY').setEmoji("⬅️");
 const check_button = new MessageButton().setCustomId('save').setStyle('SECONDARY').setEmoji("✅");
-const disabled_next_button = new MessageButton().setCustomId('next').setStyle('SECONDARY').setEmoji("➡️").setDisabled(true);
-const disabled_prev_button = new MessageButton().setCustomId('prev').setStyle('SECONDARY').setEmoji("⬅️").setDisabled(true);
-const disabled_check_button = new MessageButton().setCustomId('save').setStyle('SECONDARY').setEmoji("✅").setDisabled(true);
 const refresh_button = new MessageButton().setCustomId('refresh').setStyle('SECONDARY').setEmoji("🔄");
-const disabled_refresh_button = new MessageButton().setCustomId('refresh').setStyle('SECONDARY').setEmoji("🔄").setDisabled(true);
+const disabled_next_button = new MessageButton().setCustomId('disabled_next').setStyle('SECONDARY').setEmoji("➡️").setDisabled(true);
+const disabled_prev_button = new MessageButton().setCustomId('disabled_prev').setStyle('SECONDARY').setEmoji("⬅️").setDisabled(true);
+const disabled_check_button = new MessageButton().setCustomId('disabled_save').setStyle('SECONDARY').setEmoji("✅").setDisabled(true);
+const disabled_refresh_button = new MessageButton().setCustomId('disabled_refresh').setStyle('SECONDARY').setEmoji("🔄").setDisabled(true);
 
 let buttons = {};
 buttons.prev = prev_button;

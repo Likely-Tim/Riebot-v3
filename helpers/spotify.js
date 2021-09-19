@@ -61,6 +61,9 @@ async function currentlyPlaying() {
     return "Nothing Playing.";
   }
   response = await response.json();
+  if(response.currently_playing_type == "ad") {
+    return "Ad";
+  }
   return response.item.external_urls.spotify;
 }
 

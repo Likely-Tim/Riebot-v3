@@ -1,9 +1,7 @@
-const fetch = require("node-fetch");
-const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
+const { InteractionCollector } = require('discord.js');
 const spotify = require('../helpers/spotify.js');
 const button = require('../helpers/buttons.js');
 
@@ -63,7 +61,7 @@ async function disable_previous(client, new_message) {
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await messages.get("spotify-top_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
-    old_message.edit({components: [disabled]});
+    old_message.edit({ components: [button.add_buttons(["disabled_prev", "disabled_next"])] });
   } catch (error) {
     console.log("[Spotify-Top] Could not find previous message.");
   } finally {

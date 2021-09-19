@@ -2,7 +2,7 @@ const fs = require('fs');
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, InteractionCollector } = require('discord.js');
+const { InteractionCollector } = require('discord.js');
 const mapJson = require('../helpers/map-json.js');
 const spotify = require('../helpers/spotify.js');
 const button = require('../helpers/buttons.js');
@@ -155,7 +155,7 @@ async function disable_previous(client, new_message) {
     const old_message_id = await messages.get("spotify_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
     let buttons = button.disable_all_buttons(old_message.components[0]);
-    old_message.edit({components: [buttons]});
+    old_message.edit({components: [button.add_buttons(["disabled_prev", "disabled_next", "disabled_check"])]});
   } catch (error) {
     console.log("[Spotify] Could not find previous message.");
   } finally {
@@ -234,7 +234,7 @@ function spotify_button_interaction(client, message) {
           }
         });
       }
-      await press.update({ components: [disabled] });
+      await press.update({ components: [button.add_buttons(["disabled_prev", "disabled_next", "_disabled_check"])] });
     } else {
       let content = await content_retrieve(press.customId);
       await press.update({ content: content[0], components: content[1] });
