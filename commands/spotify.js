@@ -1,6 +1,4 @@
 const fs = require('fs');
-const fetch = require("node-fetch");
-const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const { SlashCommandBuilder } = require('@discordjs/builders');
