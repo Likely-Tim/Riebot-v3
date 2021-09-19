@@ -7,23 +7,10 @@ const { MessageActionRow, MessageButton, InteractionCollector } = require('disco
 const spotify = require('../helpers/spotify.js');
 const button = require('../helpers/buttons.js');
 
-// Secrets
-const SPOTID = process.env['SPOTIFY ID'];
-const SPOTSECRET = process.env['SPOTIFY SECRET'];
-const PASSWORD = process.env['PASSWORD'];
-
 // Databases
 const db = new Keyv({
   store: new KeyvFile({
     filename: `storage/spotify-top.json`,
-    encode: JSON.stringify,
-    decode: JSON.parse
-  })
-});
-
-const tokens = new Keyv({
-  store: new KeyvFile({
-    filename: `storage/tokens.json`,
     encode: JSON.stringify,
     decode: JSON.parse
   })
@@ -67,10 +54,34 @@ const disabled = new MessageActionRow()
 
 function response_parse(input) {
   input = input.items;
+  db.set("spotify-top_length", input.length);
+  db.set("spotify-top_index", 0);
   for(let i = 0; i < input.length; i++) {
-    db.set("spotify_top_" + i, input[i].external_urls.spotify);
+    db.set("spotify-top_" + i, input[i].external_urls.spotify);
   }
   return input[0].external_urls.spotify;
+}
+
+async function content_retrieve(action) {
+  let length = await db.get("spotify-top_length");
+  let index = await db.get("spotify-top_index");
+  if(action == "next") {
+    index += 1;
+  } else if(action == "prev") {
+    index -= 1;
+  }
+  db.set("spotify-top_index", index);
+  let content = await db.get("spotify-top_" + index);
+  let buttons = [];
+  if(index == length - 1) {
+    buttons = [button.add_buttons(["prev", "disabled_next"])];
+  } else if(index == 0) {
+    buttons = [button.add_buttons(["disabled_prev", "next"])];
+  } else {
+    buttons = [button.add_buttons(["prev", "next"])];
+  }
+  return [content, buttons];
+  
 }
 
 async function disable_previous(client, new_message) {
@@ -113,27 +124,8 @@ module.exports = {
 function spotify_top_button_interaction(client, message) {
   let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
   collector.on("collect", async press => {
-    if(press.customId == "next") {
-      let counter = await db.get("counter");
-      counter++;
-      let result = await db.get("spotify_top_" + counter);
-      db.set("counter", counter);
-      if(counter == 4) {
-        await press.update({content: result, components: [only_prev]})
-      } else {
-        await press.update({content: result, components: [button_row]});
-      }
-    } else if(press.customId == "prev") {
-      let counter = await db.get("counter");
-      counter--;
-      let result = await db.get("spotify_top_" + counter);
-      db.set("counter", counter);
-      if(counter == 0) {
-        await press.update({content: result, components: [only_next]})
-      } else {
-        await press.update({content: result, components: [button_row]});
-      }
-    }
+    let result = await content_retrieve(press.customId);
+    press.update({ content: result[0], components: result[1]});
   });
 }
 
