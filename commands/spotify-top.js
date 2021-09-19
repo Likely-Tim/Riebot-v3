@@ -24,42 +24,15 @@ const messages = new Keyv({
   })
 });
 
-// Buttons
-const next = new MessageButton()
-					.setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️");
-const prev = new MessageButton()
-					.setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️");
-const next_disabled = new MessageButton()
-          .setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️")
-          .setDisabled(true);
-const prev_disabled = new MessageButton()
-          .setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️")
-          .setDisabled(true);
-const only_next = new MessageActionRow()
-			.addComponents(prev_disabled, next);
-const only_prev = new MessageActionRow()
-			.addComponents(prev, next_disabled);
-const button_row = new MessageActionRow()
-			.addComponents(prev, next);
-const disabled = new MessageActionRow()
-			.addComponents(prev_disabled, next_disabled);
-
 function response_parse(input) {
   input = input.items;
-  db.set("spotify-top_length", input.length);
+  let length = input.length;
+  db.set("spotify-top_length", length);
   db.set("spotify-top_index", 0);
-  for(let i = 0; i < input.length; i++) {
+  for(let i = 0; i < length; i++) {
     db.set("spotify-top_" + i, input[i].external_urls.spotify);
   }
-  return input[0].external_urls.spotify;
+  return [input[0].external_urls.spotify, length];
 }
 
 async function content_retrieve(action) {
@@ -111,11 +84,14 @@ module.exports = {
     const time = interaction.options.getString("time");
     let response = await spotify.topPlayed(type, time);
     let result = response_parse(response);  
-		await interaction.reply({ content: result, components: [only_next] });
+    let components = [button.add_buttons(["disabled_prev", "next"])];
+    if(result[1] == 1) {
+      components = [button.add_buttons(["disabled_prev", "disabled_next"])];
+    }
+		await interaction.reply({ content: result[0], components: components });
 
     const message = await interaction.fetchReply();
     await disable_previous(client, message);
-    await db.set("counter", 0);
     spotify_top_button_interaction(client, message);
     return;
 	},
