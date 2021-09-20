@@ -40,7 +40,7 @@ function color_picker(status) {
 
 function song_list(songs) {
   if(typeof songs == "undefined") {
-    return "N/A";
+    return "N/A\n";
   } else {
     let result = "";
     for(i = 0; i < songs.length; i++) {

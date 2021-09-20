@@ -1,6 +1,6 @@
+const fetch = require("node-fetch");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
-const fetch = require("node-fetch");
 const CryptoJS = require("crypto-js");
 
 const PASSWORD = process.env['PASSWORD'];

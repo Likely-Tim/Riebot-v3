@@ -6,8 +6,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, InteractionCollector, MessageEmbed } = require('discord.js');
 const embed = require('../helpers/embed.js');
 const anime = require('../helpers/anime.js');
-
-
+const youtube = require('../helpers/youtube.js');
+const button = require('../helpers/buttons.js');
 
 // Secrets
 const MALID = process.env['MAL ID'];
@@ -182,6 +182,13 @@ function show_embed_builder_mal(response) {
   result.setThumbnail(response.main_picture.large);
   let opening_themes = embed.song_list(response.opening_themes);
   let ending_themes = embed.song_list(response.ending_themes); 
+  let songs = opening_themes + ending_themes;
+  if(opening_themes.length > 1024) {
+    opening_themes = opening_themes.substring(0, 1020) + "...";
+  }
+  if(ending_themes.length > 1024) {
+    ending_themes = ending_themes.substring(0, 1020) + "...";
+  }
   result.addFields(
     {name: ":notes: Opening Themes", value: opening_themes, inline: true}, 
     {name: ":notes: Ending Themes", value: ending_themes, inline:true}, 
@@ -191,7 +198,7 @@ function show_embed_builder_mal(response) {
     {name: ":100: Rating", value: `➤ ${embed.null_check(response.mean)}`, inline: true}
   );
   result.setColor(embed.color_picker(response.status));
-  return result;
+  return [result, songs];
 }
 
 function show_embed_builder_anilist(response) {
@@ -303,9 +310,11 @@ module.exports = {
     let type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
     let original_query = query;
+    //youtube.search();
 
     switch (type) {
       case ("show"): {
+        db.set("youtube_search", "");
         query = query_create(query.split(" "));
         let response = await anime.anilist_show(original_query);
         if(response != "No show found!") {
@@ -314,23 +323,27 @@ module.exports = {
           db.set("anilist_show_embed", anilist_embed);
           response = await sendGetRequest_searchId(result[1]);
           let embed = show_embed_builder_mal(response);
-          db.set("mal_show_embed", embed);
+          db.set("mal_show_embed", embed[0]);
           let components = new MessageActionRow();
           if(result[2] == true) {
             let url = await db.get("show_trailer");
-            let trailer_button = new MessageButton();
-            trailer_button.setLabel("Trailer");
-            trailer_button.setStyle("LINK");
-            trailer_button.setURL(url);
+            let trailer_button = button.add_link_button(url);
             components.addComponents(anilist_show, trailer_button);
           } else {
             components.addComponents(anilist_show);
           }
-          await interaction.reply({ embeds: [embed], components: [components] });
+          let select = button.add_select(embed[1].split('\n'));
+          let interactions = [components];
+          if(select != undefined) {
+            interactions[0].components.unshift(button.return_button("search"));
+            interactions.unshift(select);
+          }
+          await interaction.reply({ embeds: [embed[0]], components: interactions });
         } else {
           response = await sendGetRequest_search(query);
           let embed = show_embed_builder_mal(response);
-          await interaction.reply({ embeds: [embed] });
+          let select = button.add_select(embed[1].split('\n'));
+          await interaction.reply({ embeds: [embed[0]], components: interactions });
         }
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
@@ -359,33 +372,49 @@ module.exports = {
 };
 
 function anime_show_button_interaction(client, message) {
-  let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
+  let collector = new InteractionCollector(client, {message: message });
   collector.on("collect", async press => {
-    let trailer = await db.get("show_trailer");
-    let trailer_button = new MessageButton();
-    if(trailer != "None") {
-      trailer_button.setLabel("Trailer");
-      trailer_button.setStyle("LINK");
-      trailer_button.setURL(trailer);
-    }
-    if(press.customId == "anilist") {
-      let embed = await db.get("anilist_show_embed");
-      let components = new MessageActionRow();
-      if(trailer == "None") {
-        components.addComponents(mal_show);
-      } else {
-        components.addComponents(mal_show, trailer_button);
+    if(press.isButton()) {
+      let trailer = await db.get("show_trailer");
+      let trailer_button = new MessageButton();
+      if(trailer != "None") {
+        trailer_button.setLabel("Trailer");
+        trailer_button.setStyle("LINK");
+        trailer_button.setURL(trailer);
       }
-      await press.update({ embeds: [embed], components: [components] });
-    } else if(press.customId == "mal") {
-      let embed = await db.get("mal_show_embed");
-      let components = new MessageActionRow();
-      if(trailer == "None") {
-        components.addComponents(anilist_show);
-      } else {
-        components.addComponents(anilist_show, trailer_button);
+      if(press.customId == "anilist") {
+        let embed = await db.get("anilist_show_embed");
+        let components = new MessageActionRow();
+        if(trailer == "None") {
+          components.addComponents(mal_show);
+        } else {
+          components.addComponents(mal_show, trailer_button);
+        }
+        await press.update({ embeds: [embed], components: [components] });
+      } else if(press.customId == "mal") {
+        let embed = await db.get("mal_show_embed");
+        let components = new MessageActionRow();
+        if(trailer == "None") {
+          components.addComponents(anilist_show);
+        } else {
+          components.addComponents(anilist_show, trailer_button);
+        }
+        await press.update({ embeds: [embed], components: [components] });
+      } else if(press.customId == "search") {
+        let query = await db.get("youtube_search");
+        if(query == "") {
+          press.reply({ephemeral: true, content: "Select from the drop down menu!"});
+        } else {
+          let response = await youtube.search(query);
+          press.reply(response);
+        }
       }
-      await press.update({ embeds: [embed], components: [components] });
+    } else if(press.isSelectMenu()) {
+      let value = press.values[0];
+      let components = press.message.components;
+      components[0].components[0].setPlaceholder(value);
+      db.set("youtube_search", value);
+      press.update({components: components});
     }
   });
 }
