@@ -23,24 +23,12 @@ app.get("/log", (request, response) => {
 });
 
 app.get("/spotify_data", (request, response) => {
-  const spotify_line = new lineByLine('./web/saved/spotify.txt');
-  let line;
-  let file_array = [];
-  while(line = spotify_line.next()) {
-    file_array.push(line.toString('ascii'));
-  }
-  file_array = [...new Set(file_array)];
+  let file_array = file.line_array("./web/saved/spotify.txt");
   response.send({ "id": file_array });
 });
 
 app.get("/youtube_data", (request, response) => {
-  const spotify_line = new lineByLine('./web/saved/youtube.txt');
-  let line;
-  let file_array = [];
-  while(line = spotify_line.next()) {
-    file_array.push(line.toString('ascii'));
-  }
-  file_array = [...new Set(file_array)];
+  let file_array = file.line_array("./web/saved/youtube.txt");
   response.send({ "id": file_array });
 });
 
