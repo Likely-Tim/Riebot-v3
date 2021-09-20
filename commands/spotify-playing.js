@@ -41,6 +41,7 @@ module.exports = {
     const message = await interaction.fetchReply();
     disable_previous(client, message);
     spotify_playing_button_interaction(client, message);
+    return "N/A";
 	},
 };
 

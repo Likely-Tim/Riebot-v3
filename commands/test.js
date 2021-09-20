@@ -20,13 +20,7 @@ module.exports = {
 		.setName('test')
 		.setDescription('Replies with Pong!'),
 	async execute(client, interaction) {
-    // console.log(CryptoJS.AES.decrypt(temp, PASSWORD).toString(CryptoJS.enc.Utf8));
-    let token = await replit_db.get("spotify_access");
-    let temp = CryptoJS.AES.encrypt(token, PASSWORD).toString();
-    await tokens.set("spotify_access", temp);
-    token = await replit_db.get("spotify_refresh");
-    temp = CryptoJS.AES.encrypt(token, PASSWORD).toString();
-    await tokens.set("spotify_refresh", temp);
-		return interaction.reply(".");
+		interaction.reply(".");
+    return "N/A";
 	},
 };

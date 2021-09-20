@@ -9,6 +9,7 @@ const { spotify_button_interaction } = require("./commands/spotify.js");
 const { spotify_playing_button_interaction} = require("./commands/spotify-playing.js");
 const { spotify_top_button_interaction } = require("./commands/spotify-top.js");
 const { anime_show_button_interaction, anime_va_button_interaction } = require("./commands/anime.js");
+const file = require("./helpers/file.js");
 
 // Databases
 const messages = new Keyv({
@@ -43,11 +44,12 @@ client.once('ready', () => {
 
 client.on('interactionCreate', async interaction => {
 	if (!interaction.isCommand()) return;
-	const { commandName } = interaction;
+	const { commandName, user } = interaction;
 	if (!client.commands.has(commandName)) return;
 
 	try {
-		await client.commands.get(commandName).execute(client, interaction);
+		let query = await client.commands.get(commandName).execute(client, interaction);
+    file.prepend("./web/saved/command_log.txt", `${user.username}#${user.discriminator},${commandName},${query}\n`);
 	} catch (error) {
 		console.error(error);
 		return interaction.reply({ content: 'There was an error while executing this command!'});

@@ -19,6 +19,7 @@ module.exports = {
     db.set("start", true);
     let table = [ ['*', '*', '*'], ['*', '*', '*'], ['*', '*', '*']];
     db.set("table", table);
- 		return interaction.reply({content: "testing"});
+ 		interaction.reply({content: "testing"});
+    return "N/A";
 	},
 };

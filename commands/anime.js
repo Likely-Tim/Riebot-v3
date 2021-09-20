@@ -335,7 +335,7 @@ module.exports = {
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
         anime_show_button_interaction(client, message);
-        break;
+        return `${type}_${original_query}`;
       }
 
       case ("va"): {
@@ -352,7 +352,7 @@ module.exports = {
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
         anime_va_button_interaction(client, message);
-        break;
+        return `${type}_${original_query}`;
       }
     }
 	},

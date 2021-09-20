@@ -135,6 +135,7 @@ module.exports = {
 	async execute(client, interaction) {
     const zip = interaction.options.getInteger("zip");
     let embed  = await sendGetRequest_main(zip);
-		return interaction.reply({ embeds: [embed] });
+		interaction.reply({ embeds: [embed] });
+    return zip;
 	},
 };

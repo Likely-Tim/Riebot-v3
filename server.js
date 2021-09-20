@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const lineByLine = require('n-readlines');
+const file = require("./helpers/file.js");
 
 app.use(express.json());
 app.use(express.static('web'));
@@ -15,6 +16,10 @@ app.get("/spotify", (request, response) => {
 
 app.get("/youtube", (request, response) => {
   response.sendFile(__dirname + "/web/youtube.html");
+});
+
+app.get("/log", (request, response) => {
+  response.sendFile(__dirname + "/web/log.html");
 });
 
 app.get("/spotify_data", (request, response) => {
@@ -37,6 +42,11 @@ app.get("/youtube_data", (request, response) => {
   }
   file_array = [...new Set(file_array)];
   response.send({ "id": file_array });
+});
+
+app.get("/log_data", (request, response) => {
+  let file_array = file.line_array("./web/saved/command_log.txt");
+  response.send({ "log": file_array });
 });
 
 function keepAlive() {

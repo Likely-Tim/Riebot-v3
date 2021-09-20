@@ -21,6 +21,7 @@ module.exports = {
 		.setName('playlist-add')
 		.setDescription('Replies with Pong!'),
 	async execute(client, interaction) {
-		return interaction.reply('Pong!');
+		interaction.reply('Pong!');
+    return "N/A";
 	},
 };

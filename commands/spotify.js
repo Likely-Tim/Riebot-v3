@@ -174,6 +174,7 @@ module.exports = {
 	async execute(client, interaction) {
     const type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
+    let original_query = query;
     if(!cache_find(type, query)) {
       query = query_create(query.split(" "));
       let response = await spotify.search(type, query);
@@ -201,7 +202,7 @@ module.exports = {
       await disable_previous(client, message);
       spotify_button_interaction(client, message);
     }
-    return;
+    return `${type}_${original_query}`;
 	},
 };
 

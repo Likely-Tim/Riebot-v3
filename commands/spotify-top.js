@@ -91,7 +91,7 @@ module.exports = {
     const message = await interaction.fetchReply();
     await disable_previous(client, message);
     spotify_top_button_interaction(client, message);
-    return;
+    return `${type}_${query}`;
 	},
 };
 

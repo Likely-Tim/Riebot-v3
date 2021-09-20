@@ -17,7 +17,8 @@
     "keyv-file": "^0.2.0",
     "n-readlines": "^1.0.1",
     "node": "16.x",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "prepend-file": "^2.0.0"
   },
   "engines": {
     "node": "16.x"
