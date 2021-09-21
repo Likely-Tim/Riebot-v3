@@ -9,11 +9,6 @@ const anime = require('../helpers/anime.js');
 const youtube = require('../helpers/youtube.js');
 const button = require('../helpers/buttons.js');
 
-// Secrets
-const MALID = process.env['MAL ID'];
-const MALSecret = process.env['MAL SECRET'];
-const PASSWORD = process.env['PASSWORD'];
-
 const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
 const ANI_LOGO = 'https://anilist.co/img/icons/android-chrome-512x512.png';
 
@@ -26,14 +21,6 @@ const db = new Keyv({
   })
 });
 
-const tokens = new Keyv({
-  store: new KeyvFile({
-    filename: `storage/tokens.json`,
-    encode: JSON.stringify,
-    decode: JSON.parse
-  })
-});
-
 const messages = new Keyv({
   store: new KeyvFile({
     filename: `storage/messages.json`,
@@ -41,61 +28,6 @@ const messages = new Keyv({
     decode: JSON.parse
   })
 });
-
-async function postRefreshMAL() {
-  let url = "https://myanimelist.net/v1/oauth2/token";
-  let refresh_token_encrypted = await tokens.get("mal_refresh");
-  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let data = {"client_id": MALID, "client_secret": MALSecret, "grant_type": "refresh_token", "refresh_token": refresh_token};
-  let response = await fetch(url, {
-      method: 'POST', 
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams(data)});
-  response = await response.json();
-  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  await tokens.set("mal_access", access_token_encrypted);
-  refresh_token_encrypted = CryptoJS.AES.encrypt(response.refresh_token, PASSWORD).toString();
-  await tokens.set("mal_refresh", refresh_token_encrypted);
-}
-
-async function sendGetRequest_search(query) {
-  let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
-  let access_token_encrypted = await tokens.get("mal_access");
-  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let authorization = "Bearer " + access_token;
-  let response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  if(response.status == 400) {
-    return "No show found!"
-  }
-  if(response.status == 401) {
-    await postRefreshMAL();
-    return await sendGetRequest_search(query);
-  }
-  response = await response.json();
-  let id = response.data[0].node.id;
-  url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
-  response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  return response.json();
-}
-
-async function sendGetRequest_searchId(id) {
-  let url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
-  let access_token_encrypted = await tokens.get("mal_access");
-  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let authorization = "Bearer " + access_token;
-  let response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  if(response.status == 401) {
-    await postRefreshMAL();
-    return await sendGetRequest_searchId(id);
-  }
-  return response.json();
-}
 
 function show_embed_builder_mal(response) {
   const result = new MessageEmbed();
@@ -248,7 +180,7 @@ module.exports = {
           let result = show_embed_builder_anilist(response);
           anilist_embed = result[0];
           db.set("anilist_show_embed", anilist_embed);
-          response = await sendGetRequest_searchId(result[1]);
+          response = await anime.mal_searchId(result[1]);
           let embed = show_embed_builder_mal(response);
           db.set("mal_show_embed", embed[0]);
           let components = new MessageActionRow();
@@ -266,9 +198,14 @@ module.exports = {
           }
           await interaction.reply({ embeds: [embed[0]], components: interactions });
         } else {
-          response = await sendGetRequest_search(query);
+          response = await anime.mal_search(query);
           let embed = show_embed_builder_mal(response);
           let select = button.add_select(embed[1].split('\n'));
+          let interactions = [];
+          if(select != undefined) {
+            interactions[0].components.unshift(button.return_button("search"));
+            interactions.unshift(select);
+          }
           await interaction.reply({ embeds: [embed[0]], components: interactions });
         }
         const message = await interaction.fetchReply();
