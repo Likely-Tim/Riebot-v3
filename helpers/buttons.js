@@ -84,18 +84,15 @@ function add_select(options) {
   let select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
   let option_object = [];
   options = sanitize_input(options);
-  let existing_values = new Set();
-  let existing_song = new Set();
+  if(options == undefined) {
+    return;
+  }
   for(let i = 0; i < options.length; i++) {
+    let object = {};
     let option = options[i];
-    if(!existing_values.has(option)) {
-      existing_values.add(option);
-      let object = {};
-      object.label = option;
-      object.value = option;
-      option_object.push(object);
-    }
-    
+    object.label = option;
+    object.value = option;
+    option_object.push(object);
   }
   if(option_object.length == 0) {
     return;
@@ -107,42 +104,46 @@ function add_select(options) {
 }
 
 function sanitize_input(options) {
-  let remove_index = [];
-  for(let i = 0; i < options.length; i++) {
-    let option = options[i];
-    if(option == "" || option == "N/A") {
-      remove_index.unshift(i);
-      continue;
+  try {
+    let remove_index = [];
+    for(let i = 0; i < options.length; i++) {
+      let option = options[i];
+      if(option == "" || option == "N/A") {
+        remove_index.unshift(i);
+        continue;
+      }
+      option = option.replace(/#[A-Z]*[0-9]*: /, "");
+      option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, "");
+      options[i] = option;
     }
-    option = option.replace(/#[A-Z]*[0-9]*: /, "");
-    option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, "");
-    options[i] = option;
-  }
-  for(let i = 0; i < remove_index.length; i++) {
-    options.splice(remove_index[i], 1);
-  }
-  remove_index = [];
-  let songs = [];
-  for(let i = 0; i < options.length; i++) {
-    let song = options[i].match(/".*"/).toString();
-    if(songs.includes(song)) {
-      options[songs.indexOf(song)] = song;
-      remove_index.unshift(i);
-    } else {
-      songs.push(song);
+    for(let i = 0; i < remove_index.length; i++) {
+      options.splice(remove_index[i], 1);
     }
-  }
-  for(let i = 0; i < remove_index.length; i++) {
-    options.splice(remove_index[i], 1);
-  }
-  for(let i = 0; i < options.length; i++) {
-    let option = options[i];
-    if(option.length > 100) {
-      options[i] = option.match(/".*"/).toString();
+    remove_index = [];
+    let songs = [];
+    for(let i = 0; i < options.length; i++) {
+      let song = options[i].match(/".*"/).toString();
+      if(songs.includes(song)) {
+        options[songs.indexOf(song)] = song;
+        remove_index.unshift(i);
+      } else {
+        songs.push(song);
+      }
     }
+    for(let i = 0; i < remove_index.length; i++) {
+      options.splice(remove_index[i], 1);
+    }
+    for(let i = 0; i < options.length; i++) {
+      let option = options[i];
+      if(option.length > 100) {
+        options[i] = option.match(/".*"/).toString();
+      }
+    }
+    options = options.splice(0, 25);
+    return options;
+  } catch {
+    return;
   }
-  options = options.splice(0, 25);
-  return options;
 }
 
 // Disables all buttons in a MessageActionRow Array except Links
