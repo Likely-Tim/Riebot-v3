@@ -65,6 +65,11 @@ function replace(input, replace, replacement) {
   return input;
 }
 
+function change_label(button, label) {
+  button.label = label;
+  return button;
+}
+
 function return_button(input) {
   return buttons[input];
 }
@@ -155,3 +160,4 @@ module.exports.return_button = return_button;
 module.exports.action_row = action_row;
 module.exports.merge = merge;
 module.exports.replace = replace;
+module.exports.change_label = change_label;

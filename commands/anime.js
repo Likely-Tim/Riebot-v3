@@ -282,45 +282,45 @@ function anime_va_button_interaction(client, message) {
     va_button.setLabel(name);
     let value = await db.get("va_characters");
     if(press.customId == "characters") {
+      let name = await db.get("va_name");
+      let va_button = button.change_label(button.return_button("va"), name);
       let character_embed = await vaCharacters_embed_builder(0);
       db.set("vaCharacters_counter", 0);
       if(value == 1) {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("disabled_prev"), button.return_button("disabled_next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] })
+        let components = button.merge(["disabled_prev", "disabled_next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] })
       } else {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("disabled_prev"), button.return_button("next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] });
+        let components = button.merge(["disabled_prev", "next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] });
       }
     } else if(press.customId == "next") {
+      let name = await db.get("va_name");
+      let va_button = button.change_label(button.return_button("va"), name);
       let counter = await db.get("vaCharacters_counter");
       counter += 1;
       db.set("vaCharacters_counter", counter);
       let character_embed = await vaCharacters_embed_builder(counter);
       if(value - counter != 1) {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("prev"), button.return_button("next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] });
+        let components = button.merge(["prev", "next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] });
       } else {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("prev"), button.return_button("disabled_next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] });
+        let components = button.merge(["prev", "disabled_next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] });
       }
 
     } else if(press.customId == "prev") {
+      let name = await db.get("va_name");
+      let va_button = button.change_label(button.return_button("va"), name);
       let counter = await db.get("vaCharacters_counter");
       counter -= 1;
       db.set("vaCharacters_counter", counter);
       let character_embed = await vaCharacters_embed_builder(counter);
       if(counter == 0) {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("disabled_prev"), button.return_button("next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] });
+        let components = button.merge(["disabled_prev", "next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] });
       } else {
-        let temp = new MessageActionRow();
-        temp.addComponents(button.return_button("prev"), button.return_button("next"), va_button);
-        await press.update({ embeds: [character_embed], components: [temp] });
+        let components = button.merge(["prev", "next", va_button]);
+        await press.update({ embeds: [character_embed], components: [components] });
       }
     } else if(press.customId == "va") {
       let embed = await db.get("current_va");
