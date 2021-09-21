@@ -31,15 +31,7 @@ buttons.disabled_check = disabled_check_button;
 buttons.disabled_refresh = disabled_refresh_button;
 buttons.disabled_search = disabled_search_button;
 
-
-function add_buttons(input) {
-  let row = new MessageActionRow();
-  for(let i = 0; i < input.length; i++) {
-    row.addComponents(buttons[input[i]]);
-  }
-  return row;
-}
-
+// Takes an array of button names and returns a MessageActionRow
 function action_row(input) {
   let row = new MessageActionRow();
   for(let i = 0; i < input.length; i++) {
@@ -48,11 +40,36 @@ function action_row(input) {
   return row;
 }
 
+// Takes an array of button names and buttons and returns a MessageActionRow
+function merge(input) {
+  let row = new MessageActionRow();
+  for(let i = 0; i < input.length; i++) {
+    let value = input[i];
+    if(typeof value == "string") {
+      row.addComponents(buttons[value]);
+    } else {
+      row.addComponents(value);
+    }
+  }
+  return row;
+}
+
+// Takes a MessageActionRow and replaces a button
+function replace(input, replace, replacement) {
+  for(let i = 0; i < input.components.length; i++) {
+    if(input.components[i].customId == replace) {
+      input.components[i] = buttons[replacement];
+      break;
+    }
+  }
+  return input;
+}
+
 function return_button(input) {
   return buttons[input];
 }
 
-function add_link_button(url) {
+function link_button(url) {
   let button = new MessageButton().setLabel("Trailer").setStyle("LINK").setURL(url);
   return button;
 }
@@ -132,7 +149,9 @@ function disable_all_buttons(input) {
 }
 
 module.exports.disable_all_buttons = disable_all_buttons;
-module.exports.add_link_button = add_link_button;
+module.exports.link_button = link_button;
 module.exports.add_select = add_select;
 module.exports.return_button = return_button;
 module.exports.action_row = action_row;
+module.exports.merge = merge;
+module.exports.replace = replace;

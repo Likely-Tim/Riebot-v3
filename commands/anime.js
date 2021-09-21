@@ -176,6 +176,7 @@ module.exports = {
         db.set("youtube_search", "");
         query = query_create(query.split(" "));
         let response = await anime.anilist_show(original_query);
+        // Anilist found show
         if(response != "No show found!") {
           let result = show_embed_builder_anilist(response);
           anilist_embed = result[0];
@@ -183,30 +184,35 @@ module.exports = {
           response = await anime.mal_searchId(result[1]);
           let embed = show_embed_builder_mal(response);
           db.set("mal_show_embed", embed[0]);
-          let components = new MessageActionRow();
-          if(result[2]) {
-            let url = await db.get("show_trailer");
-            components.addComponents(button.return_button("anilist"), button.add_link_button(url));
-          } else {
-            components.addComponents(button.return_button("anilist"));
-          }
+          let components = [];
           let select = button.add_select(embed[1].split('\n'));
-          let interactions = [components];
           if(select != undefined) {
-            interactions[0].components.unshift(button.return_button("search"));
-            interactions.unshift(select);
-          }
-          await interaction.reply({ embeds: [embed[0]], components: interactions });
+            components.push(select);
+            if(result[2]) {
+              let url = await db.get("show_trailer");
+              components.push(button.merge(["search", "anilist", button.link_button(url)]));
+            } else {
+              components.push(button.merge(["search", "anilist"]));
+            }
+          } else {
+            if(result[2]) {
+              let url = await db.get("show_trailer");
+              components.push(button.merge(["anilist", button.link_button(url)]));
+            } else {
+              components.push(button.merge(["anilist"]));
+            }
+          } 
+          await interaction.reply({ embeds: [embed[0]], components: components });
         } else {
           response = await anime.mal_search(query);
           let embed = show_embed_builder_mal(response);
+          let components = [];
           let select = button.add_select(embed[1].split('\n'));
-          let interactions = [];
           if(select != undefined) {
-            interactions[0].components.unshift(button.return_button("search"));
-            interactions.unshift(select);
+            components.push(select);
+            components.push(button.merge(["search"]));
           }
-          await interaction.reply({ embeds: [embed[0]], components: interactions });
+          await interaction.reply({ embeds: [embed[0]], components: components });
         }
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
@@ -238,29 +244,17 @@ function anime_show_button_interaction(client, message) {
   let collector = new InteractionCollector(client, {message: message });
   collector.on("collect", async press => {
     if(press.isButton()) {
-      let trailer = await db.get("show_trailer");
-      let trailer_button;
-      if(trailer != "None") {
-        trailer_button = button.add_link_button(trailer);
-      }
+      let components = press.message.components;
       if(press.customId == "anilist") {
         let embed = await db.get("anilist_show_embed");
-        let components = new MessageActionRow();
-        if(trailer == "None") {
-          components.addComponents(button.return_button("mal"));
-        } else {
-          components.addComponents(button.return_button("mal"), trailer_button);
-        }
-        await press.update({ embeds: [embed], components: [components] });
+        let components = press.message.components;
+        components[1] = button.replace(components[1], "anilist", "mal");
+        await press.update({ embeds: [embed], components: components });
       } else if(press.customId == "mal") {
         let embed = await db.get("mal_show_embed");
-        let components = new MessageActionRow();
-        if(trailer == "None") {
-          components.addComponents(button.return_button("anilist"));
-        } else {
-          components.addComponents(button.return_button("anilist"), trailer_button);
-        }
-        await press.update({ embeds: [embed], components: [components] });
+        let components = press.message.components;
+        components[1] = button.replace(components[1], "mal", "anilist");
+        await press.update({ embeds: [embed], components: components });
       } else if(press.customId == "search") {
         let query = await db.get("youtube_search");
         if(query == "") {
