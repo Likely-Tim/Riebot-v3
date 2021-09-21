@@ -42,78 +42,6 @@ const messages = new Keyv({
   })
 });
 
-// Buttons
-const vaCharactersButton = new MessageButton()
-					.setCustomId('vaCharacters')
-          .setLabel("Characters")
-					.setStyle('PRIMARY');
-const anilist_show = new MessageButton()
-					.setCustomId('anilist')
-          .setLabel("Anilist")
-					.setStyle('PRIMARY');
-const anilist_show_disabled = new MessageButton()
-					.setCustomId('anilist')
-          .setLabel("Anilist")
-					.setStyle('PRIMARY')
-          .setDisabled(true);
-const mal_show = new MessageButton()
-					.setCustomId('mal')
-          .setLabel("MAL")
-					.setStyle('PRIMARY');
-const mal_show_disabled = new MessageButton()
-					.setCustomId('mal')
-          .setLabel("MAL")
-					.setStyle('PRIMARY')
-          .setDisabled(true);
-const vaCharactersButton_disabled = new MessageButton()
-          .setCustomId('vaCharacters')
-          .setLabel("Characters")
-          .setStyle('PRIMARY')
-          .setDisabled(true);
-const va = new MessageButton()
-					.setCustomId('va')
-          .setLabel("temp")
-					.setStyle('SECONDARY');
-const va_disabled = new MessageButton()
-          .setCustomId('va')
-          .setLabel("temp")
-          .setStyle('SECONDARY')
-          .setDisabled(true);
-const next = new MessageButton()
-					.setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️");
-const prev = new MessageButton()
-					.setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️");
-const next_disabled = new MessageButton()
-          .setCustomId('next')
-					.setStyle('SECONDARY')
-          .setEmoji("➡️")
-          .setDisabled(true);
-const prev_disabled = new MessageButton()
-          .setCustomId('prev')
-					.setStyle('SECONDARY')
-          .setEmoji("⬅️")
-          .setDisabled(true);
-const only_next = new MessageActionRow()
-			.addComponents(prev_disabled, next, va);
-const only_prev = new MessageActionRow()
-			.addComponents(prev, next_disabled, va);
-const button_row = new MessageActionRow()
-			.addComponents(prev, next, va);
-const disabled = new MessageActionRow()
-			.addComponents(prev_disabled, next_disabled, va);
-const va_buttons = new MessageActionRow()
-			.addComponents(vaCharactersButton);
-const va_buttons_disabled = new MessageActionRow()
-      .addComponents(vaCharactersButton_disabled);
-const anilist_button_disabled = new MessageActionRow()
-      .addComponents(anilist_show_disabled);
-const mal_button_disabled = new MessageActionRow()
-      .addComponents(mal_show_disabled);
-
 async function postRefreshMAL() {
   let url = "https://myanimelist.net/v1/oauth2/token";
   let refresh_token_encrypted = await tokens.get("mal_refresh");
@@ -310,7 +238,6 @@ module.exports = {
     let type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
     let original_query = query;
-    //youtube.search();
 
     switch (type) {
       case ("show"): {
@@ -325,12 +252,11 @@ module.exports = {
           let embed = show_embed_builder_mal(response);
           db.set("mal_show_embed", embed[0]);
           let components = new MessageActionRow();
-          if(result[2] == true) {
+          if(result[2]) {
             let url = await db.get("show_trailer");
-            let trailer_button = button.add_link_button(url);
-            components.addComponents(anilist_show, trailer_button);
+            components.addComponents(button.return_button("anilist"), button.add_link_button(url));
           } else {
-            components.addComponents(anilist_show);
+            components.addComponents(button.return_button("anilist"));
           }
           let select = button.add_select(embed[1].split('\n'));
           let interactions = [components];
@@ -360,7 +286,7 @@ module.exports = {
           save_va_characters(response.characters.edges);
           let embed = va_embed_builder(response);
           db.set("current_va", embed);
-          await interaction.reply({ embeds: [embed], components: [va_buttons] });
+          await interaction.reply({ embeds: [embed], components: [button.add_buttons(["characters"])] });
         }
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
@@ -376,28 +302,26 @@ function anime_show_button_interaction(client, message) {
   collector.on("collect", async press => {
     if(press.isButton()) {
       let trailer = await db.get("show_trailer");
-      let trailer_button = new MessageButton();
+      let trailer_button;
       if(trailer != "None") {
-        trailer_button.setLabel("Trailer");
-        trailer_button.setStyle("LINK");
-        trailer_button.setURL(trailer);
+        trailer_button = button.add_link_button(trailer);
       }
       if(press.customId == "anilist") {
         let embed = await db.get("anilist_show_embed");
         let components = new MessageActionRow();
         if(trailer == "None") {
-          components.addComponents(mal_show);
+          components.addComponents(button.return_button("mal"));
         } else {
-          components.addComponents(mal_show, trailer_button);
+          components.addComponents(button.return_button("mal"), trailer_button);
         }
         await press.update({ embeds: [embed], components: [components] });
       } else if(press.customId == "mal") {
         let embed = await db.get("mal_show_embed");
         let components = new MessageActionRow();
         if(trailer == "None") {
-          components.addComponents(anilist_show);
+          components.addComponents(button.return_button("anilist"));
         } else {
-          components.addComponents(anilist_show, trailer_button);
+          components.addComponents(button.return_button("anilist"), trailer_button);
         }
         await press.update({ embeds: [embed], components: [components] });
       } else if(press.customId == "search") {
@@ -422,19 +346,21 @@ function anime_show_button_interaction(client, message) {
 function anime_va_button_interaction(client, message) {
   let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
   collector.on("collect", async press => {
-    let value = await db.get("va_characters");
     let name = await db.get("va_name");
-    if(press.customId == "vaCharacters") {
-      only_next.components[2].label = name;
-      only_prev.components[2].label = name;
-      disabled.components[2].label = name;
-      button_row.components[2].label = name;
+    let va_button = button.return_button("va");
+    va_button.setLabel(name);
+    let value = await db.get("va_characters");
+    if(press.customId == "characters") {
       let character_embed = await vaCharacters_embed_builder(0);
       db.set("vaCharacters_counter", 0);
       if(value == 1) {
-        await press.update({ embeds: [character_embed], components: [disabled] })
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("disabled_prev"), button.return_button("disabled_next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] })
       } else {
-        await press.update({ embeds: [character_embed], components: [only_next] });
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("disabled_prev"), button.return_button("next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] });
       }
     } else if(press.customId == "next") {
       let counter = await db.get("vaCharacters_counter");
@@ -442,9 +368,13 @@ function anime_va_button_interaction(client, message) {
       db.set("vaCharacters_counter", counter);
       let character_embed = await vaCharacters_embed_builder(counter);
       if(value - counter != 1) {
-        await press.update({ embeds: [character_embed], components: [button_row] });
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("prev"), button.return_button("next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] });
       } else {
-        await press.update({ embeds: [character_embed], components: [only_prev] });
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("prev"), button.return_button("disabled_next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] });
       }
 
     } else if(press.customId == "prev") {
@@ -453,13 +383,17 @@ function anime_va_button_interaction(client, message) {
       db.set("vaCharacters_counter", counter);
       let character_embed = await vaCharacters_embed_builder(counter);
       if(counter == 0) {
-        await press.update({ embeds: [character_embed], components: [only_next] });
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("disabled_prev"), button.return_button("next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] });
       } else {
-        await press.update({ embeds: [character_embed], components: [button_row] });
+        let temp = new MessageActionRow();
+        temp.addComponents(button.return_button("prev"), button.return_button("next"), va_button);
+        await press.update({ embeds: [character_embed], components: [temp] });
       }
     } else if(press.customId == "va") {
       let embed = await db.get("current_va");
-      await press.update({ embeds: [embed], components: [va_buttons] })
+      await press.update({ embeds: [embed], components: [button.add_buttons(["characters"])] })
     } 
   });
 }
