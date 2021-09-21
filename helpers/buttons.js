@@ -145,10 +145,15 @@ function sanitize_input(options) {
   return options;
 }
 
-// Disables all buttons in a MessageActionRow
+// Disables all buttons in a MessageActionRow Array except Links
 function disable_all_buttons(input) {
-  for(let i = 0; i < input.components.length; i++) {
-    input.components[i].disabled = true;
+  for(let j = 0; j < input.length; j++) {
+    let action_row = input[j];
+    for(let i = 0; i < action_row.components.length; i++) {
+      if(action_row.components[i].style != "LINK") {
+        action_row.components[i].disabled = true;
+      }
+    }
   }
   return input;
 }

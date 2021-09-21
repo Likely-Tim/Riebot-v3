@@ -21,7 +21,8 @@ async function disable_previous(client, new_message) {
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await messages.get("spotify-playing_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
-    old_message.edit({ components: [button.action_row(["disabled_refresh", "disabled_check"])] });
+    let buttons = button.disable_all_buttons(old_message.components);
+    old_message.edit({ components: buttons });
   } catch (error) {
     console.log("[Spotify-Playing] Could not find previous message.");
   } finally {
