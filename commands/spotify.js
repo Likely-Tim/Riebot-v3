@@ -139,11 +139,11 @@ async function content_retrieve(action) {
   let content = await db.get("spotify_" + index);
   let buttons = [];
   if(index == length - 1) {
-    buttons = [button.add_buttons(["prev", "disabled_next", "check"])];
+    buttons = [button.action_row(["prev", "disabled_next", "check"])];
   } else if(index == 0) {
-    buttons = [button.add_buttons(["disabled_prev", "next", "check"])];
+    buttons = [button.action_row(["disabled_prev", "next", "check"])];
   } else {
-    buttons = [button.add_buttons(["prev", "next", "check"])];
+    buttons = [button.action_row(["prev", "next", "check"])];
   }
   return [content, buttons];
 }
@@ -155,7 +155,7 @@ async function disable_previous(client, new_message) {
     const old_message_id = await messages.get("spotify_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
     let buttons = button.disable_all_buttons(old_message.components[0]);
-    old_message.edit({components: [button.add_buttons(["disabled_prev", "disabled_next", "disabled_check"])]});
+    old_message.edit({components: [button.action_row(["disabled_prev", "disabled_next", "disabled_check"])]});
   } catch (error) {
     console.log("[Spotify] Could not find previous message.");
   } finally {
@@ -181,9 +181,9 @@ module.exports = {
       let result = await response_parse(response, type);
       let components = []
       if(result[0] == 1) {
-        components.push(button.add_buttons(["disabled_prev", "disabled_next", "check"]));
+        components.push(button.action_row(["disabled_prev", "disabled_next", "check"]));
       } else {
-        components.push(button.add_buttons(["disabled_prev", "next", "check"]));
+        components.push(button.action_row(["disabled_prev", "next", "check"]));
       }
       await interaction.reply({ content: result[1], components: components });
       const message = await interaction.fetchReply();
@@ -193,9 +193,9 @@ module.exports = {
       let result = await storage_to_main(cache.get(`${type}_${query}`));
       let components = []
       if(result[0] == 1) {
-        components.push(button.add_buttons(["disabled_prev", "disabled_next", "check"]));
+        components.push(button.action_row(["disabled_prev", "disabled_next", "check"]));
       } else {
-        components.push(button.add_buttons(["disabled_prev", "next", "check"]));
+        components.push(button.action_row(["disabled_prev", "next", "check"]));
       }
       await interaction.reply({ content: result[1], components: components });
       const message = await interaction.fetchReply();
@@ -235,7 +235,7 @@ function spotify_button_interaction(client, message) {
           }
         });
       }
-      await press.update({ components: [button.add_buttons(["disabled_prev", "disabled_next", "_disabled_check"])] });
+      await press.update({ components: [button.action_row(["disabled_prev", "disabled_next", "_disabled_check"])] });
     } else {
       let content = await content_retrieve(press.customId);
       await press.update({ content: content[0], components: content[1] });

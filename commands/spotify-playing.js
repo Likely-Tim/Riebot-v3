@@ -21,7 +21,7 @@ async function disable_previous(client, new_message) {
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await messages.get("spotify-playing_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
-    old_message.edit({ components: [button.add_buttons(["disabled_refresh", "disabled_check"])] });
+    old_message.edit({ components: [button.action_row(["disabled_refresh", "disabled_check"])] });
   } catch (error) {
     console.log("[Spotify-Playing] Could not find previous message.");
   } finally {
@@ -37,7 +37,7 @@ module.exports = {
 
 	async execute(client, interaction) {
     let response = await spotify.currentlyPlaying();
-		await interaction.reply({ content: response, components: [button.add_buttons(["refresh", "check"])] });
+		await interaction.reply({ content: response, components: [button.action_row(["refresh", "check"])] });
     const message = await interaction.fetchReply();
     disable_previous(client, message);
     spotify_playing_button_interaction(client, message);
@@ -57,7 +57,7 @@ function spotify_playing_button_interaction(client, message) {
           }
         });
       }
-      await press.update({ components: [button.add_buttons(["disabled_refresh", "disabled_check"])] })
+      await press.update({ components: [button.action_row(["disabled_refresh", "disabled_check"])] })
     } else {
       let response = await spotify.currentlyPlaying();
       await press.update({ content: response });

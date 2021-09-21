@@ -223,7 +223,7 @@ module.exports = {
           save_va_characters(response.characters.edges);
           let embed = va_embed_builder(response);
           db.set("current_va", embed);
-          await interaction.reply({ embeds: [embed], components: [button.add_buttons(["characters"])] });
+          await interaction.reply({ embeds: [embed], components: [button.action_row(["characters"])] });
         }
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
@@ -330,7 +330,7 @@ function anime_va_button_interaction(client, message) {
       }
     } else if(press.customId == "va") {
       let embed = await db.get("current_va");
-      await press.update({ embeds: [embed], components: [button.add_buttons(["characters"])] })
+      await press.update({ embeds: [embed], components: [button.action_row(["characters"])] })
     } 
   });
 }

@@ -40,6 +40,14 @@ function add_buttons(input) {
   return row;
 }
 
+function action_row(input) {
+  let row = new MessageActionRow();
+  for(let i = 0; i < input.length; i++) {
+    row.addComponents(buttons[input[i]]);
+  }
+  return row;
+}
+
 function return_button(input) {
   return buttons[input];
 }
@@ -124,7 +132,7 @@ function disable_all_buttons(input) {
 }
 
 module.exports.disable_all_buttons = disable_all_buttons;
-module.exports.add_buttons = add_buttons;
 module.exports.add_link_button = add_link_button;
 module.exports.add_select = add_select;
 module.exports.return_button = return_button;
+module.exports.action_row = action_row;

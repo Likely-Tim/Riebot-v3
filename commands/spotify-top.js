@@ -45,11 +45,11 @@ async function content_retrieve(action) {
   let content = await db.get("spotify-top_" + index);
   let buttons = [];
   if(index == length - 1) {
-    buttons = [button.add_buttons(["prev", "disabled_next"])];
+    buttons = [button.action_row(["prev", "disabled_next"])];
   } else if(index == 0) {
-    buttons = [button.add_buttons(["disabled_prev", "next"])];
+    buttons = [button.action_row(["disabled_prev", "next"])];
   } else {
-    buttons = [button.add_buttons(["prev", "next"])];
+    buttons = [button.action_row(["prev", "next"])];
   }
   return [content, buttons];
   
@@ -61,7 +61,7 @@ async function disable_previous(client, new_message) {
     const channel = await client.channels.fetch(channel_id);
     const old_message_id = await messages.get("spotify-top_message_id");
     const old_message = await channel.messages.fetch(old_message_id);
-    old_message.edit({ components: [button.add_buttons(["disabled_prev", "disabled_next"])] });
+    old_message.edit({ components: [button.action_row(["disabled_prev", "disabled_next"])] });
   } catch (error) {
     console.log("[Spotify-Top] Could not find previous message.");
   } finally {
@@ -82,16 +82,16 @@ module.exports = {
     const time = interaction.options.getString("time");
     let response = await spotify.topPlayed(type, time);
     let result = response_parse(response);  
-    let components = [button.add_buttons(["disabled_prev", "next"])];
+    let components = [button.action_row(["disabled_prev", "next"])];
     if(result[1] == 1) {
-      components = [button.add_buttons(["disabled_prev", "disabled_next"])];
+      components = [button.action_row(["disabled_prev", "disabled_next"])];
     }
 		await interaction.reply({ content: result[0], components: components });
 
     const message = await interaction.fetchReply();
     await disable_previous(client, message);
     spotify_top_button_interaction(client, message);
-    return `${type}_${query}`;
+    return `${type}_${time}`;
 	},
 };
 
