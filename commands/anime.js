@@ -250,7 +250,7 @@ function anime_show_button_interaction(client, message) {
     } else if(press.isSelectMenu()) {
       let value = press.values[0];
       let components = press.message.components;
-      components[0].components[0].setPlaceholder(value);
+      button.set_default(components[0].components[0], value);
       db.set("youtube_search", value);
       press.update({components: components});
     }

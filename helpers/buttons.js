@@ -159,6 +159,19 @@ function disable_all_buttons(input) {
   return input;
 }
 
+// Takes a MessageSelectMenu and makes an option default
+function set_default(input, name) {
+  let options = input.options;
+  for(let i = 0; i < options.length; i++) {
+    if(options[i].default) {
+      options[i].default = false;
+    }
+    if(options[i].label == name) {
+      options[i].default = true;
+    }
+  }
+}
+
 module.exports.disable_all_buttons = disable_all_buttons;
 module.exports.link_button = link_button;
 module.exports.add_select = add_select;
@@ -167,3 +180,4 @@ module.exports.action_row = action_row;
 module.exports.merge = merge;
 module.exports.replace = replace;
 module.exports.change_label = change_label;
+module.exports.set_default = set_default;
