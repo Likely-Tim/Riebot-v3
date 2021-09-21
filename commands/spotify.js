@@ -122,11 +122,6 @@ async function storage_to_main(id) {
   return [length, current];
 }
 
-function query_create(args) {
-  let query = args.join("+");
-  return encodeURIComponent(query);
-}
-
 async function content_retrieve(action) {
   let index = await db.get("spotify_index");
   let length = await db.get("spotify_length");
@@ -174,9 +169,7 @@ module.exports = {
 	async execute(client, interaction) {
     const type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
-    let original_query = query;
     if(!cache_find(type, query)) {
-      query = query_create(query.split(" "));
       let response = await spotify.search(type, query);
       let result = await response_parse(response, type);
       let components = []
@@ -202,7 +195,7 @@ module.exports = {
       await disable_previous(client, message);
       spotify_button_interaction(client, message);
     }
-    return `${type}_${original_query}`;
+    return `${type}_${query}`;
 	},
 };
 

@@ -128,11 +128,6 @@ async function save_va_characters(response) {
   }
 }
 
-function query_create(args) {
-  let query = args.join("+");
-  return encodeURIComponent(query);
-}
-
 async function disable_previous(client, new_message, prefix) {
   try {
     const channel_id = await messages.get(`anime-${prefix}_channel_id`);
@@ -169,13 +164,11 @@ module.exports = {
 	async execute(client, interaction) {
     let type = interaction.options.getString("type");
     let query = interaction.options.getString("query");
-    let original_query = query;
 
     switch (type) {
       case ("show"): {
         db.set("youtube_search", "");
-        query = query_create(query.split(" "));
-        let response = await anime.anilist_show(original_query);
+        let response = await anime.anilist_show(query);
         // Anilist found show
         if(response != "No show found!") {
           let result = show_embed_builder_anilist(response);
@@ -217,7 +210,7 @@ module.exports = {
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
         anime_show_button_interaction(client, message);
-        return `${type}_${original_query}`;
+        return `${type}_${query}`;
       }
 
       case ("va"): {
@@ -234,7 +227,7 @@ module.exports = {
         const message = await interaction.fetchReply();
         disable_previous(client, message, type);
         anime_va_button_interaction(client, message);
-        return `${type}_${original_query}`;
+        return `${type}_${query}`;
       }
     }
 	},

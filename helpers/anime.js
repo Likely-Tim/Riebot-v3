@@ -15,7 +15,13 @@ const tokens = new Keyv({
   })
 });
 
+function query_create(args) {
+  let query = args.join("+");
+  return encodeURIComponent(query);
+}
+
 async function mal_search(query) {
+  query = query_create(query.split(" "));
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
   let access_token_encrypted = await tokens.get("mal_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);

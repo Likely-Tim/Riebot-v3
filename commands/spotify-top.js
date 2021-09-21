@@ -52,7 +52,6 @@ async function content_retrieve(action) {
     buttons = [button.action_row(["prev", "next"])];
   }
   return [content, buttons];
-  
 }
 
 async function disable_previous(client, new_message) {

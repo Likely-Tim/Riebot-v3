@@ -31,6 +31,7 @@ async function refreshToken() {
 }
 
 async function search(type, query) {
+  query = encodeURIComponent(query);
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&market=JP&limit=5`;
