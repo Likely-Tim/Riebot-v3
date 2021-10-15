@@ -20,6 +20,22 @@ function query_create(args) {
   return encodeURIComponent(query);
 }
 
+async function postRefreshMAL() {
+  let url = "https://myanimelist.net/v1/oauth2/token";
+  let refresh_token_encrypted = await tokens.get("mal_refresh");
+  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let data = {"client_id": MALID, "client_secret": MALSecret, "grant_type": "refresh_token", "refresh_token": refresh_token};
+  let response = await fetch(url, {
+      method: 'POST', 
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams(data)});
+  response = await response.json();
+  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("mal_access", access_token_encrypted);
+  refresh_token_encrypted = CryptoJS.AES.encrypt(response.refresh_token, PASSWORD).toString();
+  await tokens.set("mal_refresh", refresh_token_encrypted);
+}
+
 async function mal_search(query) {
   query = query_create(query.split(" "));
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
@@ -34,7 +50,7 @@ async function mal_search(query) {
   }
   if(response.status == 401) {
     await postRefreshMAL();
-    return await sendGetRequest_search(query);
+    return await mal_search(query);
   }
   response = await response.json();
   let id = response.data[0].node.id;
@@ -55,7 +71,7 @@ async function mal_searchId(id) {
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
     await postRefreshMAL();
-    return await sendGetRequest_searchId(id);
+    return await mal_searchId(id);
   }
   return response.json();
 }
