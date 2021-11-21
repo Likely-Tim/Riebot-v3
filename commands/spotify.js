@@ -228,7 +228,7 @@ function spotify_button_interaction(client, message) {
           }
         });
       }
-      await press.update({ components: [button.action_row(["disabled_prev", "disabled_next", "_disabled_check"])] });
+      await press.update({ components: [button.action_row(["disabled_prev", "disabled_next", "disabled_check"])] });
     } else {
       let content = await content_retrieve(press.customId);
       await press.update({ content: content[0], components: content[1] });

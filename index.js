@@ -89,7 +89,7 @@ client.on('messageCreate', async message => {
         return;
       }});
     }
-  }
+  } 
 });
 
 // client.on('debug', console.log);

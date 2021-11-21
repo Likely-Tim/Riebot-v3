@@ -3,9 +3,9 @@ const CryptoJS = require("crypto-js");
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 
-const MALID = process.env['MAL ID'];
-const MALSecret = process.env['MAL SECRET'];
-const PASSWORD = process.env['PASSWORD'];
+const MALID = process.env.MAL_ID;
+const MALSecret = process.env.MAL_SECRET;
+const PASSWORD = process.env.PASSWORD;
 
 const tokens = new Keyv({
   store: new KeyvFile({

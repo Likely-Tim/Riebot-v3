@@ -3,9 +3,9 @@ const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
 const CryptoJS = require("crypto-js");
 
-const PASSWORD = process.env['PASSWORD'];
-const SPOTID = process.env['SPOTIFY ID'];
-const SPOTSECRET = process.env['SPOTIFY SECRET'];
+const PASSWORD = process.env.PASSWORD;
+const SPOTID = process.env.SPOTIFY_ID;
+const SPOTSECRET = process.env.SPOTIFY_SECRET;
 
 const tokens = new Keyv({
   store: new KeyvFile({

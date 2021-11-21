@@ -3,7 +3,7 @@ const { MessageEmbed } = require("discord.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 // Secrets
-const api_key = process.env['WEATHER KEY']; 
+const api_key = process.env.WEATHER_KEY; 
 
 const days_of_the_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
