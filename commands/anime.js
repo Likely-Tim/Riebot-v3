@@ -34,6 +34,9 @@ function show_embed_builder_mal(response) {
   if(response == "No show found!") {
     return result.setDescription(response);
   }
+  if(response.error != undefined) {
+    return [embed.default_embed(), ''];
+  }
   result.setTitle(response.title);
   let link = "https://myanimelist.net/anime/" + response.id;
   result.setURL(link);
@@ -186,6 +189,8 @@ module.exports = {
             }
           } 
           await interaction.reply({ embeds: [embed[0]], components: components });
+
+        //Anilist search fails
         } else {
           response = await anime.mal_search(query);
           let embed = show_embed_builder_mal(response);
@@ -231,12 +236,20 @@ function anime_show_button_interaction(client, message) {
       if(press.customId == "anilist") {
         let embed = await db.get("anilist_show_embed");
         let components = press.message.components;
-        components[1] = button.replace(components[1], "anilist", "mal");
+        if(components[1] == undefined) {
+          components[0] = button.replace(components[0], "anilist", "mal");
+        } else {
+          components[1] = button.replace(components[1], "anilist", "mal");
+        }
         await press.update({ embeds: [embed], components: components });
       } else if(press.customId == "mal") {
         let embed = await db.get("mal_show_embed");
         let components = press.message.components;
-        components[1] = button.replace(components[1], "mal", "anilist");
+        if(components[1] == undefined) {
+          components[0] = button.replace(components[0], "mal", "anilist");
+        } else {
+          components[1] = button.replace(components[1], "mal", "anilist");
+        }
         await press.update({ embeds: [embed], components: components });
       } else if(press.customId == "search") {
         let query = await db.get("youtube_search");

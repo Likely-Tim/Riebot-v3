@@ -1,3 +1,11 @@
+const { MessageEmbed } = require('discord.js');
+
+function default_embed() {
+  let result = new MessageEmbed();
+  result.setDescription('Not found');
+  return result;
+}
+
 function null_check(data) {
   if(data == null) {
     return "N/A";
@@ -189,3 +197,4 @@ module.exports.anilist_date = anilist_date;
 module.exports.active_since = active_since;
 module.exports.age = age;
 module.exports.home_town = home_town;
+module.exports.default_embed = default_embed;
