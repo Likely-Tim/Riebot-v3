@@ -1,5 +1,65 @@
 const { MessageEmbed } = require('discord.js');
 
+const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
+const ANI_LOGO = 'https://anilist.co/img/icons/android-chrome-512x512.png';
+
+function show_embed_builder_mal(response) {
+  const result = new MessageEmbed();
+  if(response == "No show found!") {
+    return result.setDescription(response);
+  }
+  if(response.error != undefined) {
+    return [default_embed(), ''];
+  }
+  result.setTitle(response.title);
+  let link = "https://myanimelist.net/anime/" + response.id;
+  result.setURL(link);
+  result.setAuthor(studio_list("mal", response.studios), MAL_LOGO);
+  result.setDescription(response.synopsis);
+  result.setThumbnail(response.main_picture.large);
+  let opening_themes = song_list(response.opening_themes);
+  let ending_themes = song_list(response.ending_themes); 
+  let songs = opening_themes + ending_themes;
+  if(opening_themes.length > 1024) {
+    opening_themes = opening_themes.substring(0, 1020) + "...";
+  }
+  if(ending_themes.length > 1024) {
+    ending_themes = ending_themes.substring(0, 1020) + "...";
+  }
+  result.addFields(
+    {name: ":notes: Opening Themes", value: opening_themes, inline: true}, 
+    {name: ":notes: Ending Themes", value: ending_themes, inline:true}, 
+    {name: '\u200B', value: '\u200B' }, 
+    {name: ":trophy: Rank", value: `➤ ${null_check(response.rank)}`, inline: true}, 
+    {name: ":alarm_clock: Episodes", value: `➤ ${episode_check(response.num_episodes)}`, inline: true}, 
+    {name: ":100: Rating", value: `➤ ${null_check(response.mean)}`, inline: true}
+  );
+  result.setColor(color_picker(response.status));
+  return [result, songs];
+}
+
+function show_embed_builder_anilist(response) {
+  let result = new MessageEmbed();
+  result.setTitle(response.title.romaji)
+  result.setURL(response.siteUrl);
+  result.setAuthor(studio_list("anilist", response.studios.nodes), ANI_LOGO);
+  if(response.description == null) {
+    result.setDescription("TBA");
+  } else {
+    result.setDescription(response.description.replaceAll('<br>', ''));
+  }
+  result.setThumbnail(response.coverImage.extraLarge);
+  let rank = anilist_rank(response.rankings);
+  result.addFields(
+    {name: '\u200B', value: '\u200B' }, 
+    {name: ":trophy: Rank", value: `➤ ${rank}`, inline: true}, 
+    {name: ":alarm_clock: Episodes", value: `➤ ${response.episodes}`, inline: true}, 
+    {name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true}
+  );
+  result.setColor(color_picker(response.status));
+  return [result, response.idMal, response.trailer];
+}
+
 function default_embed() {
   let result = new MessageEmbed();
   result.setDescription('Not found');
@@ -198,3 +258,5 @@ module.exports.active_since = active_since;
 module.exports.age = age;
 module.exports.home_town = home_town;
 module.exports.default_embed = default_embed;
+module.exports.show_embed_builder_mal = show_embed_builder_mal;
+module.exports.show_embed_builder_anilist = show_embed_builder_anilist;
