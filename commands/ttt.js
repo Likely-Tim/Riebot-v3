@@ -30,9 +30,13 @@ async function game_start(player_1, player_2) {
   return board;
 }
 
-async function game_end() {
+async function game_end(client) {
   db.set("game_in_progress", "false");
-  let message = await db.get("message");
+  let channelId = await messages.get('ttt_channel_id');
+  let messageId = await messages.get('ttt_message_id');
+  let channel = await client.channels.fetch(channelId);
+  let message = await channel.messages.fetch(messageId);
+  await message.unpin();
 }
 
 async function save_message(new_message) {
@@ -49,7 +53,6 @@ module.exports = {
  	async execute(client, interaction) {
     let challenged = interaction.options.getUser("user");
     let in_progress = await db.get("game_in_progress");
-    console.log(in_progress);
     if(in_progress == undefined) {
       in_progress = "false";
       db.set("game_in_progress", "false");
@@ -67,13 +70,14 @@ module.exports = {
           interaction.reply({content: "Leave the bots alone"});
           return;
         }
-        if(interaction.user.id == challenged.id) {
-          interaction.reply({content: "Can't play against yourself"});
-          return;
-        }
+        // if(interaction.user.id == challenged.id) {
+        //   interaction.reply({content: "Can't play against yourself"});
+        //   return;
+        // }
         let board = await game_start(interaction.user.id, challenged.id);
         await interaction.reply({content: `**<@${interaction.user.id}> vs <@${challenged.id}>**`, components: board});
         const message = await interaction.fetchReply();
+        message.pin();
         save_message(message);
         ttt_button_interaction(client, message);
       }
@@ -101,13 +105,13 @@ function ttt_button_interaction(client, message) {
     db.set("player_1_turn", !turn);
     let board = button.update_board(press.customId, press.message.components, turn);
     if(button.check_win(board, turn)) {
-      game_end();
+      game_end(client);
       board = button.disable_all_buttons(board);
       await press.update({content: `**<@${player}> wins**`, components: board});
       return;
     }
     if(button.finished(board)) {
-      game_end();
+      game_end(client);
       await press.update({content: `**Draw**`, components: board});
       return;
     }

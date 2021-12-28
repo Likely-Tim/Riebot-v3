@@ -63,20 +63,6 @@ async function accept_spotify(code) {
   return response.json();
 }
 
-app.get("/auth/accepted", (request, response) => {
-  sendPostRequest_mal(request.query.code)
-  .then((response) => {
-    let access_token = response.access_token;
-    let refresh_token = response.refresh_token;
-    console.log(access_token);
-    console.log(refresh_token);
-  })
-  .catch((error) => {
-    console.log("Error:", error);
-  });
-  response.sendStatus(200);
-});
-
 function keepAlive() {
   app.listen(3000, () => {
     console.log("Server is ready.");

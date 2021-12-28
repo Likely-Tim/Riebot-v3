@@ -58,6 +58,9 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', async message => {
+  if(message.type == 'CHANNEL_PINNED_MESSAGE' && message.author.id == 876282017149505537) {
+    message.delete();
+  }
   if(message.author.bot == false) {
     let content = message.content;
     if(content.startsWith('https://open.spotify.com/track/')) {
