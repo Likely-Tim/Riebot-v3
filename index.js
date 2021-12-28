@@ -10,6 +10,7 @@ const { spotify_playing_button_interaction} = require("./commands/spotify-playin
 const { spotify_top_button_interaction } = require("./commands/spotify-top.js");
 const { anime_show_button_interaction, anime_va_button_interaction } = require("./commands/anime.js");
 const file = require("./helpers/file.js");
+const { ttt_button_interaction } = require("./commands/ttt.js");
 
 // Databases
 const messages = new Keyv({
@@ -130,6 +131,7 @@ function message_mapper() {
   map.set("spotify-top", spotify_top_button_interaction);
   map.set("anime-show", anime_show_button_interaction);
   map.set("anime-va", anime_va_button_interaction);
+  map.set("ttt", ttt_button_interaction);
   return map;
 }
 

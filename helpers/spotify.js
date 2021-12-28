@@ -68,6 +68,45 @@ async function currentlyPlaying() {
   return response.item.external_urls.spotify;
 }
 
+async function currentlyPlaying_uri(token) {
+  let url = `https://api.spotify.com/v1/me/player/currently-playing?market=US`;
+  let authorization = "Bearer " + token;
+  let response = await fetch(url, {
+      method: 'GET', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await refreshToken();
+    return await currentlyPlaying();
+  }
+  if(response.status == 204) {
+    return "Nothing Playing.";
+  }
+  response = await response.json();
+  if(response.currently_playing_type == "ad") {
+    return "Ad";
+  }
+  return response.item.uri;
+}
+
+async function playlist_add_playing() {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let uri = await currentlyPlaying_uri(access_token);
+  if(!uri.startsWith("spotify:track:")) {
+    return false;
+  }
+  let url = `https://api.spotify.com/v1/playlists/4f0u6dEIdEAefLS9oiM8j0/tracks?uris=${uri}`;
+  let authorization = "Bearer " + access_token;
+  let response = await fetch(url, {
+      method: 'POST', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await refreshToken();
+    return await playlist_add_playing();
+  }
+  return true;
+}
+
 async function topPlayed(type, time) {
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
@@ -87,5 +126,6 @@ async function topPlayed(type, time) {
 module.exports.search = search;
 module.exports.currentlyPlaying = currentlyPlaying;
 module.exports.topPlayed = topPlayed;
+module.exports.playlist_add_playing = playlist_add_playing;
 
 

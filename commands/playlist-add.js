@@ -1,27 +1,23 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-/*
-async function sendGetRequest_search(type, query) {
-  let access_token = await replit_db.get("spotify_access");
-  let url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&market=JP&limit=5`;
-  let authorization = "Bearer " + access_token;
-  let response = await fetch(url, {
-      method: 'GET', 
-      headers: {"Authorization": authorization}});
-  response = await response.json();
-  if(response.error !== undefined && response.error.status === 401) {
-    await sendPostRequest_refreshToken();
-    return await sendGetRequest_search(type, query);
-  }
-  return await response_parse(response, type);
-}
-*/
+const spotify = require('../helpers/spotify.js');
+const sleep = require('util').promisify(setTimeout);
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('playlist-add')
 		.setDescription('Replies with Pong!'),
 	async execute(client, interaction) {
-		interaction.reply('Pong!');
-    return "N/A";
+    if(interaction.user.id != 332923810099494913) {
+      await interaction.reply(":)");
+      return;
+    }
+    let response = await spotify.playlist_add_playing();
+    if(response) {
+      await interaction.reply("Added");
+    } else {
+      await interaction.reply("Can't add");
+    }
+    await sleep(3000);
+    await interaction.deleteReply();
 	},
 };

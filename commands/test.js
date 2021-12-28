@@ -22,7 +22,7 @@ module.exports = {
     let encrypted = CryptoJS.AES.encrypt("", PASSWORD).toString();
     await tokens.set("youtube_key", encrypted);
     */
-		interaction.reply(".");
+		interaction.reply("Bop");
     return "N/A";
 	},
 };
