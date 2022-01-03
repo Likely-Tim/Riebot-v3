@@ -76,7 +76,7 @@ async function currentlyPlaying_uri(token) {
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
     await refreshToken();
-    return await currentlyPlaying();
+    return await currentlyPlaying_uri();
   }
   if(response.status == 204) {
     return "Nothing Playing.";
