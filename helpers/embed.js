@@ -3,6 +3,40 @@ const { MessageEmbed } = require('discord.js');
 const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
 const ANI_LOGO = 'https://anilist.co/img/icons/android-chrome-512x512.png';
 
+function basic_embed_builder(string) {
+  const result = new MessageEmbed();
+  result.setDescription(string);
+  return result;
+}
+
+function song_current_song_embed_builder(response, progress_bar) {
+  const result = new MessageEmbed();
+  result.setTitle("Current Song");
+  let description = "Nothing Playing.";
+  if(response != undefined) {
+    description = `${response.name}\n\n${progress_bar}`;
+    result.setThumbnail(response.thumbnail);
+  }
+  result.setDescription(description);
+  return result;
+}
+
+function song_queue_embed_builder(response) {
+  const result = new MessageEmbed();
+  result.setTitle("Current Queue");
+  let description = song_queue_description(response);
+  result.setDescription(description);
+  return result;
+}
+
+function song_queue_description(response) {
+  let result = "";
+  for(let i = 0; i < response.length; i++) {
+    result += `${i+1}. [${response[i].name}](${response[i].url})\n`;
+  }
+  return result;
+}
+
 function show_embed_builder_mal(response) {
   const result = new MessageEmbed();
   if(response == "No show found!") {
@@ -260,3 +294,6 @@ module.exports.home_town = home_town;
 module.exports.default_embed = default_embed;
 module.exports.show_embed_builder_mal = show_embed_builder_mal;
 module.exports.show_embed_builder_anilist = show_embed_builder_anilist;
+module.exports.song_queue_embed_builder = song_queue_embed_builder;
+module.exports.song_current_song_embed_builder = song_current_song_embed_builder;
+module.exports.basic_embed_builder = basic_embed_builder;

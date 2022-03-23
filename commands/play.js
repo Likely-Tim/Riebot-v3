@@ -5,11 +5,12 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('play')
 		.setDescription('Voice Channel Commands')
-    .addStringOption(option => option.setName('task').setDescription('command').setRequired(true).addChoices([["link", "link"]]))
+    .addStringOption(option => option.setName('task').setDescription('command').setRequired(true).addChoices([["song link", "link"], ["current song", "current"], ["skip song", "skip"]]))
     .addStringOption(option => option.setName("query").setDescription("What to search")),
 	async execute(client, interaction) {
+    await interaction.deferReply();
     if(!interaction.member.voice.channelId) {
-      interaction.reply("Not in a voice channel.");
+      interaction.editReply("Not in a voice channel.");
       return;
     }
     let queue = voice.create_queue(client.player, interaction.guildId);
@@ -21,15 +22,25 @@ module.exports = {
         case("link"): {
           let success = await voice.link_play(query);
           if(success) {
-            interaction.reply("Playing");
+            interaction.editReply({embeds: [voice.get_song_queue()]});
             return;
           } else {
-            interaction.reply(`Can't play ${query}.`);
+            interaction.editReply(`Can't play ${query}.`);
             return;
           }
         }
+
+        case("current"): {
+          interaction.editReply({embeds: [voice.get_current_song()]});
+          return;
+        }
+
+        case("skip"): {
+          interaction.editReply({embeds: [voice.skip_song()]});
+          return
+        }
     }
-		interaction.reply("OOP");
+		interaction.editReply("OOP");
     return "N/A";
 	},
 };
