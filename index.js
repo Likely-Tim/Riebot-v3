@@ -4,7 +4,11 @@ const { KeyvFile } = require('keyv-file');
 const keepAlive = require("./server");
 const refreshSlashCommands = require("./SlashRefresh");
 const { Client, Collection, Intents } = require('discord.js');
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
+const { Player } = require("discord-music-player");
+const player = new Player(client)
+client.player = player;
+
 const { spotify_button_interaction } = require("./commands/spotify.js");
 const { spotify_playing_button_interaction} = require("./commands/spotify-playing.js");
 const { spotify_top_button_interaction } = require("./commands/spotify-top.js");

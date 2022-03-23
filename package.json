@@ -11,6 +11,7 @@
     "@replit/database": "^2.0.1",
     "crypto-js": "^4.1.1",
     "discord-api-types": "^0.22.0",
+    "discord-music-player": "^8.3.1",
     "discord.js": "^13.1.0",
     "express": "^4.17.1",
     "keyv": "^4.0.3",

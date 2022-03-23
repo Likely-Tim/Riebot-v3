@@ -27,6 +27,7 @@ async function refreshToken() {
   response = await response.json();
   let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
   await tokens.set("spotify_access", access_token_encrypted);
+  console.log("Refreshed Spotify Creds");
   return;
 }
 
@@ -39,6 +40,7 @@ async function search(type, query) {
   let response = await fetch(url, {
       method: 'GET', 
       headers: {"Authorization": authorization}});
+  console.log(response)
   if(response.status == 401) {
     await refreshToken();
     return await search(type, query);
@@ -75,8 +77,7 @@ async function currentlyPlaying_uri(token) {
       method: 'GET', 
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
-    await refreshToken();
-    return await currentlyPlaying_uri();
+    return "Expired";
   }
   if(response.status == 204) {
     return "Nothing Playing.";
@@ -89,9 +90,16 @@ async function currentlyPlaying_uri(token) {
 }
 
 async function playlist_add_playing() {
+  console.log("In Helper");
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  console.log(access_token);
   let uri = await currentlyPlaying_uri(access_token);
+  console.log(uri);
+  if(uri == "Expired") {
+    await refreshToken();
+    return await playlist_add_playing();
+  }
   if(!uri.startsWith("spotify:track:")) {
     return false;
   }
@@ -100,6 +108,7 @@ async function playlist_add_playing() {
   let response = await fetch(url, {
       method: 'POST', 
       headers: {"Authorization": authorization}});
+  console.log(response);
   if(response.status == 401) {
     await refreshToken();
     return await playlist_add_playing();
