@@ -1,4 +1,7 @@
 const { song_queue_embed_builder, song_current_song_embed_builder, basic_embed_builder } = require('./embed.js');
+const { getPlaylist, nextPage } = require('./spotify.js');
+
+const spotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
 var queue = null;
 
 function create_queue(player, channel_id) {
@@ -22,7 +25,49 @@ async function link_play(link) {
   }
 }
 
+function get_spotify_id(url) {
+  url = new URL(url);
+  let path = url.pathname;
+  return path.substring(path.lastIndexOf("/") + 1);
+}
+
 async function link_playlist(link) {
+  if(!spotifyPlaylistRegex.test(link)) {
+    return false;
+  }
+  let spotify_id = get_spotify_id(link);
+  let playlist = await getPlaylist(spotify_id, 0);
+  if(playlist.tracks.total > 100) {
+    for(let i = 0; i < playlist.tracks.items.length; i++) {
+      let song_link = playlist.tracks.items[i].track.external_urls.spotify;
+      if(song_link == undefined) {
+        continue;
+      } else {
+        link_play(song_link);
+      }
+    }
+    playlist = await nextPage(playlist.tracks.next);
+    for(let i = 0; i < playlist.items.length; i++) {
+      let song_link = playlist.items[i].track.external_urls.spotify;
+      if(song_link == undefined) {
+        continue;
+      } else {
+        link_play(song_link);
+      }
+    }
+    while(playlist.next != null) {
+      playlist = await nextPage(playlist.next);
+      for(let i = 0; i < playlist.items.length; i++) {
+        let song_link = playlist.items[i].track.external_urls.spotify;
+        if(song_link == undefined) {
+          continue;
+        } else {
+          link_play(song_link);
+        }
+      } 
+    }
+    return true
+  }
   try {
     await queue.playlist(link);
     return true;
