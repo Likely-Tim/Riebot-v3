@@ -55,7 +55,7 @@ app.get("/auth/accepted/spotify", (request, response) => {
 
 async function accept_spotify(code) {
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "https://riebot-v3.fhusion.repl.co/auth/accepted/spotify", "grant_type": "authorization_code"};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "http://ec2-18-144-165-99.us-west-1.compute.amazonaws.com:3000/auth/accepted/spotify", "grant_type": "authorization_code"};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},

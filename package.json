@@ -2,9 +2,6 @@
   "name": "Riebot-v3",
   "version": "3.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "node ."
-  },
   "dependencies": {
     "@discordjs/builders": "^0.5.0",
     "@discordjs/rest": "0.1.0-canary.0",
@@ -13,11 +10,12 @@
     "discord-api-types": "^0.22.0",
     "discord-music-player": "^8.3.1",
     "discord.js": "^13.1.0",
+    "dotenv": "^16.0.0",
     "express": "^4.17.1",
     "keyv": "^4.0.3",
     "keyv-file": "^0.2.0",
     "n-readlines": "^1.0.1",
-    "node": "16.x",
+    "node": "^16.x",
     "node-fetch": "^2.6.1",
     "prepend-file": "^2.0.0"
   },
