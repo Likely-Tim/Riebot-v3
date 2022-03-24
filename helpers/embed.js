@@ -32,7 +32,13 @@ function song_queue_embed_builder(response) {
 function song_queue_description(response) {
   let result = "";
   for(let i = 0; i < response.length; i++) {
-    result += `${i+1}. [${response[i].name}](${response[i].url})\n`;
+    let entry = `${i+1}. [${response[i].name}](${response[i].url})\n`;
+    if(result.length + entry.length >= 4050) {
+      result += `${response.length - i} more songs...`
+      break;
+    } else {
+      result += entry;
+    }
   }
   return result;
 }

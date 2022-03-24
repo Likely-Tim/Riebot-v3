@@ -14,9 +14,20 @@ async function join_channel(channel_id) {
 
 async function link_play(link) {
   try {
-    let song = await queue.play(link);
+    await queue.play(link);
     return true;
   } catch(err) {
+    console.log(err);
+    return false;
+  }
+}
+
+async function link_playlist(link) {
+  try {
+    await queue.playlist(link);
+    return true;
+  } catch(err) {
+    console.log(err);
     return false;
   }
 }
@@ -46,6 +57,7 @@ function skip_song() {
     let description = `Skipped [${current_song.name}](${current_song.url})`;
     return basic_embed_builder(description);
   } catch(err) {
+    console.log(err);
     return basic_embed_builder("Unable to skip.");
   }
 }
@@ -59,3 +71,4 @@ module.exports.get_song_queue = get_song_queue;
 module.exports.get_progress_bar = get_progress_bar;
 module.exports.get_current_song = get_current_song;
 module.exports.skip_song = skip_song;
+module.exports.link_playlist = link_playlist;

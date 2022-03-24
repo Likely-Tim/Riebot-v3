@@ -5,7 +5,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('play')
 		.setDescription('Voice Channel Commands')
-    .addStringOption(option => option.setName('task').setDescription('command').setRequired(true).addChoices([["song link", "link"], ["current song", "current"], ["skip song", "skip"]]))
+    .addStringOption(option => option.setName('task').setDescription('command').setRequired(true).addChoices([["Song Link", "song_link"], ["Playlist Link", "playlist_link"], ["Current Song", "current"], ["Skip Song", "skip"]]))
     .addStringOption(option => option.setName("query").setDescription("What to search")),
 	async execute(client, interaction) {
     await interaction.deferReply();
@@ -19,8 +19,19 @@ module.exports = {
     const query = interaction.options.getString("query");
     
     switch(task) {
-        case("link"): {
+        case("song_link"): {
           let success = await voice.link_play(query);
+          if(success) {
+            interaction.editReply({embeds: [voice.get_song_queue()]});
+            return;
+          } else {
+            interaction.editReply(`Can't play ${query}.`);
+            return;
+          }
+        }
+
+        case("playlist_link"): {
+          let success = await voice.link_playlist(query);
           if(success) {
             interaction.editReply({embeds: [voice.get_song_queue()]});
             return;
