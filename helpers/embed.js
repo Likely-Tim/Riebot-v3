@@ -25,6 +25,11 @@ function song_queue_embed_builder(response) {
   const result = new MessageEmbed();
   result.setTitle("Current Queue");
   let description = song_queue_description(response);
+  if(description == "") {
+    description = "Nothing Playing";
+  } else {
+    result.setThumbnail(response[0].thumbnail);
+  }
   result.setDescription(description);
   return result;
 }

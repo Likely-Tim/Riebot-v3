@@ -62,6 +62,16 @@ function skip_song() {
   }
 }
 
+function shuffle() {
+  try {
+    queue.shuffle();
+    return get_song_queue();
+  } catch(err) {
+    console.log(err);
+    return basic_embed_builder("Unable to shuffle.");
+  }
+}
+
 
 
 module.exports.create_queue = create_queue;
@@ -72,3 +82,4 @@ module.exports.get_progress_bar = get_progress_bar;
 module.exports.get_current_song = get_current_song;
 module.exports.skip_song = skip_song;
 module.exports.link_playlist = link_playlist;
+module.exports.shuffle = shuffle;
