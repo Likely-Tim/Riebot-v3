@@ -59,7 +59,7 @@ function show_embed_builder_mal(response) {
   result.setTitle(response.title);
   let link = "https://myanimelist.net/anime/" + response.id;
   result.setURL(link);
-  result.setAuthor(studio_list("mal", response.studios), MAL_LOGO);
+  result.setAuthor({name: studio_list("mal", response.studios), iconURL: MAL_LOGO})
   result.setDescription(response.synopsis);
   result.setThumbnail(response.main_picture.large);
   let opening_themes = song_list(response.opening_themes);
@@ -87,7 +87,7 @@ function show_embed_builder_anilist(response) {
   let result = new MessageEmbed();
   result.setTitle(response.title.romaji)
   result.setURL(response.siteUrl);
-  result.setAuthor(studio_list("anilist", response.studios.nodes), ANI_LOGO);
+  result.setAuthor({name: studio_list("anilist", response.studios.nodes), iconURL: ANI_LOGO})
   if(response.description == null) {
     result.setDescription("TBA");
   } else {
