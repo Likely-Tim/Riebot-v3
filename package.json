@@ -9,15 +9,15 @@
     "crypto-js": "^4.1.1",
     "discord-api-types": "^0.22.0",
     "discord-music-player": "^8.3.1",
-    "discord.js": "^13.1.0",
+    "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
-    "express": "^4.17.1",
-    "keyv": "^4.0.3",
+    "express": "^4.17.3",
+    "keyv": "^4.1.1",
     "keyv-file": "^0.2.0",
     "n-readlines": "^1.0.1",
-    "node": "^16.x",
+    "node": "^16.14.0",
     "node-fetch": "^2.6.1",
-    "prepend-file": "^2.0.0"
+    "prepend-file": "^2.0.1"
   },
   "engines": {
     "node": "16.x"
@@ -30,7 +30,6 @@
     "node",
     "express"
   ],
-  "devDependencies": {},
   "author": "",
   "description": ""
 }
