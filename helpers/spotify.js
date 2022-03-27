@@ -190,6 +190,21 @@ async function addItemsToPlaylist(playlistId, uriArray) {
   return await response.json();
 }
 
+async function unfollowPlaylist(playlistId) {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let authorization = "Bearer " + access_token;
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
+  let response = await fetch(url, {
+      method: 'DELETE', 
+      headers: {"Authorization": authorization}});
+  if(response.status == 401) {
+    await refreshToken();
+    return await unfollowPlaylist();
+  }
+  return;
+}
+
 async function voiceTempPlaylist(playlist) {
   let tempPlaylistIds = []
   let uriArray = [];
@@ -197,6 +212,9 @@ async function voiceTempPlaylist(playlist) {
   let tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
   for(let i = 0; i < playlist.tracks.items.length; i++) {
+    if(playlist.tracks.items[i].is_local) {
+      continue;
+    }
     uriArray.push(playlist.tracks.items[i].track.uri);
   }
   await addItemsToPlaylist(tempPlaylistId, uriArray);
@@ -214,11 +232,14 @@ async function voiceTempPlaylist(playlist) {
   await addItemsToPlaylist(tempPlaylistId, uriArray);
   while(playlist.next != null) {
     uriArray = [];
-    playlist = await nextPage(playlist.tracks.next);
+    playlist = await nextPage(playlist.next);
     tempPlaylist = await createPlaylist("Temp", false);
     tempPlaylistId = tempPlaylist.id;
     tempPlaylistIds.push(tempPlaylistId);
     for(let i = 0; i < playlist.items.length; i++) {
+      if(playlist.items[i].is_local) {
+        continue;
+      }
       uriArray.push(playlist.items[i].track.uri);
     }
     await addItemsToPlaylist(tempPlaylistId, uriArray);
@@ -231,6 +252,6 @@ module.exports.currentlyPlaying = currentlyPlaying;
 module.exports.topPlayed = topPlayed;
 module.exports.playlist_add_playing = playlist_add_playing;
 module.exports.getPlaylist = getPlaylist;
-module.exports.nextPage = nextPage;
 module.exports.voiceTempPlaylist = voiceTempPlaylist;
+module.exports.unfollowPlaylist = unfollowPlaylist;
 

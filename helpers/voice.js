@@ -1,5 +1,5 @@
 const { song_queue_embed_builder, song_current_song_embed_builder, basic_embed_builder } = require('./embed.js');
-const { getPlaylist, nextPage, voiceTempPlaylist } = require('./spotify.js');
+const { getPlaylist, voiceTempPlaylist, unfollowPlaylist } = require('./spotify.js');
 
 const SPOTIFY_PLAYLIST_LINK = "https://open.spotify.com/playlist/";
 const spotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
@@ -42,11 +42,15 @@ async function link_playlist(link) {
     let playlists = await voiceTempPlaylist(playlist);
     for(let i = 0; i < playlists.length; i++) {
       let playlist_link = SPOTIFY_PLAYLIST_LINK + playlists[i];
-      await queue.playlist(playlist_link);
+      try {
+        await queue.playlist(playlist_link);
+      } catch(err) {
+        console.log("Some Playlist Error");
+      }
+      await unfollowPlaylist(playlists[i]);
     }
     return true
   }
-  return false;
   try {
     await queue.playlist(link);
     return true;
