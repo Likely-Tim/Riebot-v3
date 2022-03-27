@@ -90,12 +90,9 @@ async function currentlyPlaying_uri(token) {
 }
 
 async function playlist_add_playing() {
-  console.log("In Helper");
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  console.log(access_token);
   let uri = await currentlyPlaying_uri(access_token);
-  console.log(uri);
   if(uri == "Expired") {
     await refreshToken();
     return await playlist_add_playing();
@@ -108,7 +105,6 @@ async function playlist_add_playing() {
   let response = await fetch(url, {
       method: 'POST', 
       headers: {"Authorization": authorization}});
-  console.log(response);
   if(response.status == 401) {
     await refreshToken();
     return await playlist_add_playing();
@@ -131,17 +127,17 @@ async function topPlayed(type, time) {
   return await response.json();
 }
 
-async function getPlaylist(playlistId, offset) {
+async function getPlaylist(playlistId) {
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = `https://api.spotify.com/v1/playlists/${playlistId}?offset=${offset}&limit=100&fields=tracks.next,tracks.total,tracks.items(track(external_urls))`;
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
       method: 'GET', 
       headers: {"Authorization": authorization}});
   if(response.status == 401) {
     await refreshToken();
-    return await getPlaylist(playlistId, offset);
+    return await getPlaylist(playlistId);
   }
   return await response.json();
 }
@@ -160,10 +156,81 @@ async function nextPage(url) {
   return await response.json();
 }
 
+async function createPlaylist(name, public) {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let authorization = "Bearer " + access_token;
+  let url = "https://api.spotify.com/v1/users/fhusion/playlists";
+  let data = {"name": name, "public": public};
+  let response = await fetch(url, {
+      method: 'POST', 
+      headers: {"Authorization": authorization},
+      body: JSON.stringify(data)});
+  if(response.status == 401) {
+    await refreshToken();
+    return await createPlaylist();
+  }
+  return await response.json();
+}
+
+async function addItemsToPlaylist(playlistId, uriArray) {
+  let access_token_encrypted = await tokens.get("spotify_access");
+  let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let authorization = "Bearer " + access_token;
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
+  let data = {"uris": uriArray};
+  let response = await fetch(url, {
+      method: 'POST', 
+      headers: {"Authorization": authorization},
+      body: JSON.stringify(data)});
+  if(response.status == 401) {
+    await refreshToken();
+    return await addItemsToPlaylist();
+  }
+  return await response.json();
+}
+
+async function voiceTempPlaylist(playlist) {
+  let tempPlaylistIds = []
+  let uriArray = [];
+  let tempPlaylist = await createPlaylist("Temp", false);
+  let tempPlaylistId = tempPlaylist.id;
+  tempPlaylistIds.push(tempPlaylistId);
+  for(let i = 0; i < playlist.tracks.items.length; i++) {
+    uriArray.push(playlist.tracks.items[i].track.uri);
+  }
+  await addItemsToPlaylist(tempPlaylistId, uriArray);
+  uriArray = [];
+  playlist = await nextPage(playlist.tracks.next);
+  tempPlaylist = await createPlaylist("Temp", false);
+  tempPlaylistId = tempPlaylist.id;
+  tempPlaylistIds.push(tempPlaylistId);
+  for(let i = 0; i < playlist.items.length; i++) {
+    if(playlist.items[i].track.is_local) {
+      continue;
+    }
+    uriArray.push(playlist.items[i].track.uri);
+  }
+  await addItemsToPlaylist(tempPlaylistId, uriArray);
+  while(playlist.next != null) {
+    uriArray = [];
+    playlist = await nextPage(playlist.tracks.next);
+    tempPlaylist = await createPlaylist("Temp", false);
+    tempPlaylistId = tempPlaylist.id;
+    tempPlaylistIds.push(tempPlaylistId);
+    for(let i = 0; i < playlist.items.length; i++) {
+      uriArray.push(playlist.items[i].track.uri);
+    }
+    await addItemsToPlaylist(tempPlaylistId, uriArray);
+  }
+  return tempPlaylistIds;
+}
+
 module.exports.search = search;
 module.exports.currentlyPlaying = currentlyPlaying;
 module.exports.topPlayed = topPlayed;
 module.exports.playlist_add_playing = playlist_add_playing;
 module.exports.getPlaylist = getPlaylist;
 module.exports.nextPage = nextPage;
+module.exports.voiceTempPlaylist = voiceTempPlaylist;
 

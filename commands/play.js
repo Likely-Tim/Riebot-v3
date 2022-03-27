@@ -13,7 +13,7 @@ module.exports = {
       interaction.editReply("Not in a voice channel.");
       return;
     }
-    let queue = voice.create_queue(client.player, interaction.guildId);
+    voice.create_queue(client.player, interaction.guildId);
     await voice.join_channel(interaction.member.voice.channelId);
     const task = interaction.options.getString("task");
     const query = interaction.options.getString("query");

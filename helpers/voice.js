@@ -1,6 +1,7 @@
 const { song_queue_embed_builder, song_current_song_embed_builder, basic_embed_builder } = require('./embed.js');
-const { getPlaylist, nextPage } = require('./spotify.js');
+const { getPlaylist, nextPage, voiceTempPlaylist } = require('./spotify.js');
 
+const SPOTIFY_PLAYLIST_LINK = "https://open.spotify.com/playlist/";
 const spotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
 var queue = null;
 
@@ -36,38 +37,16 @@ async function link_playlist(link) {
     return false;
   }
   let spotify_id = get_spotify_id(link);
-  let playlist = await getPlaylist(spotify_id, 0);
+  let playlist = await getPlaylist(spotify_id);
   if(playlist.tracks.total > 100) {
-    for(let i = 0; i < playlist.tracks.items.length; i++) {
-      let song_link = playlist.tracks.items[i].track.external_urls.spotify;
-      if(song_link == undefined) {
-        continue;
-      } else {
-        link_play(song_link);
-      }
-    }
-    playlist = await nextPage(playlist.tracks.next);
-    for(let i = 0; i < playlist.items.length; i++) {
-      let song_link = playlist.items[i].track.external_urls.spotify;
-      if(song_link == undefined) {
-        continue;
-      } else {
-        link_play(song_link);
-      }
-    }
-    while(playlist.next != null) {
-      playlist = await nextPage(playlist.next);
-      for(let i = 0; i < playlist.items.length; i++) {
-        let song_link = playlist.items[i].track.external_urls.spotify;
-        if(song_link == undefined) {
-          continue;
-        } else {
-          link_play(song_link);
-        }
-      } 
+    let playlists = await voiceTempPlaylist(playlist);
+    for(let i = 0; i < playlists.length; i++) {
+      let playlist_link = SPOTIFY_PLAYLIST_LINK + playlists[i];
+      await queue.playlist(playlist_link);
     }
     return true
   }
+  return false;
   try {
     await queue.playlist(link);
     return true;
