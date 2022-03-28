@@ -1,4 +1,32 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: spotify.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: spotify.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * @module Spotify
  */
 
@@ -22,7 +50,7 @@ const tokens = new Keyv({
 /**
  * Refreshes Stored Spotify Access Token
  * 
- * @returns {Promise<boolean>} Boolean if successful or not
+ * @returns {Promise&lt;boolean>} Boolean if successful or not
  */
 async function refreshToken() {
   let refresh_token_encrypted = await tokens.get("spotify_refresh");
@@ -48,18 +76,18 @@ async function refreshToken() {
  * 
  * @param {string} type - Type to search for (Allowed Values: "album", "artist", "track")
  * @param {string} query - Search Qurty
- * @returns {Promise<object>} Search Response
+ * @returns {Promise&lt;object>} Search Response
  */
 async function search(type, query) {
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
+  let url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&amp;type=${type}&amp;limit=5`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
       method: 'GET', 
       headers: {"Authorization": authorization}});
   if(response.status == 200) {
-    return await response.json();
+    await response.json();
   } else if(response.status == 401) {
     await refreshToken();
     return await search(type, query);
@@ -72,7 +100,7 @@ async function search(type, query) {
  * Get the currently playing track
  * 
  * @param {boolean} uri - Want URI or link to track
- * @returns {Promise<string>} URI or link of currently playing track
+ * @returns {Promise&lt;string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
   let access_token_encrypted = await tokens.get("spotify_access");
@@ -134,12 +162,12 @@ async function playlist_add_playing(playlistId) {
  * 
  * @param {string} type - Type to search for (Allowed Values: artist, track)
  * @param {string} period - Time period (Allowed Values: short_term, medium_term, long_term)
- * @returns {Promise<object>} Spotify Results
+ * @returns {Promise&lt;object>} Spotify Results
  */
 async function topPlayed(type, period) {
   let access_token_encrypted = await tokens.get("spotify_access");
   let access_token = CryptoJS.AES.decrypt(access_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  let url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
+  let url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&amp;limit=5`;
   let authorization = "Bearer " + access_token;
   let response = await fetch(url, {
       method: 'GET', 
@@ -158,7 +186,7 @@ async function topPlayed(type, period) {
  * Get a Spotify playlist by its ID
  * 
  * @param {string} playlistId - Spotify Playlist ID
- * @returns {Promise<object>} Spotify Result
+ * @returns {Promise&lt;object>} Spotify Result
  */
 async function getPlaylist(playlistId) {
   let access_token_encrypted = await tokens.get("spotify_access");
@@ -182,7 +210,7 @@ async function getPlaylist(playlistId) {
  * Get the next page of data
  * 
  * @param {string} url - URL for next page
- * @returns {Promise<object>} Spotify Results
+ * @returns {Promise&lt;object>} Spotify Results
  */
 async function nextPage(url) {
   let access_token_encrypted = await tokens.get("spotify_access");
@@ -206,7 +234,7 @@ async function nextPage(url) {
  * 
  * @param {string} name - Name of the playlist
  * @param {boolean} isPublic - Playlist is public or not
- * @returns {Promise<object>} Spotify Playlist
+ * @returns {Promise&lt;object>} Spotify Playlist
  */
 async function createPlaylist(name, isPublic) {
   let access_token_encrypted = await tokens.get("spotify_access");
@@ -232,7 +260,7 @@ async function createPlaylist(name, isPublic) {
  * Add items to a playlist
  * 
  * @param {string} playlistId - Spotify Playlist ID
- * @param {Array<string>} uriArray - Array of URIs
+ * @param {Array&lt;string>} uriArray - Array of URIs
  * @returns {boolean} Successful or not
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
@@ -283,7 +311,7 @@ async function unfollowPlaylist(playlistId) {
  * Create playlists of length 100
  * 
  * @param {object} playlist - Original Spotify Playlist Object
- * @returns {Array<string>} Array of Playlist IDs
+ * @returns {Array&lt;string>} Array of Playlist IDs
  */
 async function voiceTempPlaylist(playlist) {
   let tempPlaylistIds = []
@@ -291,7 +319,7 @@ async function voiceTempPlaylist(playlist) {
   let tempPlaylist = await createPlaylist("Temp", false);
   let tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
-  for(let i = 0; i < playlist.tracks.items.length; i++) {
+  for(let i = 0; i &lt; playlist.tracks.items.length; i++) {
     if(playlist.tracks.items[i].is_local) {
       continue;
     }
@@ -303,7 +331,7 @@ async function voiceTempPlaylist(playlist) {
   tempPlaylist = await createPlaylist("Temp", false);
   tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
-  for(let i = 0; i < playlist.items.length; i++) {
+  for(let i = 0; i &lt; playlist.items.length; i++) {
     if(playlist.items[i].track.is_local) {
       continue;
     }
@@ -316,7 +344,7 @@ async function voiceTempPlaylist(playlist) {
     tempPlaylist = await createPlaylist("Temp", false);
     tempPlaylistId = tempPlaylist.id;
     tempPlaylistIds.push(tempPlaylistId);
-    for(let i = 0; i < playlist.items.length; i++) {
+    for(let i = 0; i &lt; playlist.items.length; i++) {
       if(playlist.items[i].is_local) {
         continue;
       }
@@ -335,3 +363,26 @@ module.exports.getPlaylist = getPlaylist;
 module.exports.voiceTempPlaylist = voiceTempPlaylist;
 module.exports.unfollowPlaylist = unfollowPlaylist;
 
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Spotify.html">Spotify</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Mon Mar 28 2022 01:20:21 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

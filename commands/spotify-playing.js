@@ -37,7 +37,7 @@ module.exports = {
 		.setDescription('What is currently playing?'),
 
 	async execute(client, interaction) {
-    let response = await spotify.currentlyPlaying();
+    let response = await spotify.currentlyPlaying(false);
 		await interaction.reply({ content: response, components: [button.action_row(["refresh", "check"])] });
     const message = await interaction.fetchReply();
     disable_previous(client, message);
@@ -60,7 +60,7 @@ function spotify_playing_button_interaction(client, message) {
       }
       await press.update({ components: [button.action_row(["disabled_refresh", "disabled_check"])] })
     } else {
-      let response = await spotify.currentlyPlaying();
+      let response = await spotify.currentlyPlaying(false);
       await press.update({ content: response });
     }
   });

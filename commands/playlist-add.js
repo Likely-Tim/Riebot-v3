@@ -11,8 +11,7 @@ module.exports = {
       await interaction.reply(":)");
       return;
     }
-    console.log("In command");
-    let response = await spotify.playlist_add_playing();
+    let response = await spotify.playlist_add_playing("4f0u6dEIdEAefLS9oiM8j0");
     if(response) {
       await interaction.reply("Added");
     } else {

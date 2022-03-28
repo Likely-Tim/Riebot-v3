@@ -14,6 +14,10 @@ app.all("/", (request, response) => {
   response.sendFile(__dirname + "/web/index.html");
 });
 
+app.all("/docs", (request, response) => {
+  response.sendFile(__dirname + "/docs/index.html");
+});
+
 app.get("/spotify", (request, response) => {
   response.sendFile(__dirname + "/web/spotify.html");
 });
@@ -51,6 +55,11 @@ app.get("/auth/accepted/spotify", (request, response) => {
     console.log(error);
   });
   response.sendStatus(200);
+});
+
+app.all("*", (request, response) => {
+  console.log(request.url)
+  response.sendFile(__dirname + "/docs" + request.url);
 });
 
 async function accept_spotify(code) {
