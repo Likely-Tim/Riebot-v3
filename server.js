@@ -58,7 +58,6 @@ app.get("/auth/accepted/spotify", (request, response) => {
 });
 
 app.all("*", (request, response) => {
-  console.log(request.url)
   response.sendFile(__dirname + "/docs" + request.url);
 });
 

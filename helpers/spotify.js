@@ -25,10 +25,10 @@ const tokens = new Keyv({
  * @returns {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
-  let refresh_token_encrypted = await tokens.get("spotify_refresh");
-  let refresh_token = CryptoJS.AES.decrypt(refresh_token_encrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  let refreshTokenEncrypted = await tokens.get("spotify_refresh");
+  let refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refresh_token};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "grant_type": "refresh_token", "refresh_token": refreshToken};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -37,8 +37,8 @@ async function refreshToken() {
     return false;
   }
   response = await response.json();
-  let access_token_encrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  await tokens.set("spotify_access", access_token_encrypted);
+  let accessTokenEncrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  await tokens.set("spotify_access", accessTokenEncrypted);
   console.log("Refreshed Spotify Creds");
   return true;
 }
@@ -107,7 +107,7 @@ async function currentlyPlaying(uri) {
  * @param {string} playlistId - Spotify Playlist ID
  * @returns {boolean} Successful or not
  */
-async function playlist_add_playing(playlistId) {
+async function playlistAddPlaying(playlistId) {
   let uri = await currentlyPlaying(true);
   if(!uri.startsWith("spotify:track:")) {
     return false;
@@ -123,7 +123,7 @@ async function playlist_add_playing(playlistId) {
     return true;
   } else if(response.status == 401) {
     await refreshToken();
-    return await playlist_add_playing(playlistId);
+    return await playlistAddPlaying(playlistId);
   } else {
     throw `Spotify Status: ${response.status}`;
   }
@@ -330,7 +330,7 @@ async function voiceTempPlaylist(playlist) {
 module.exports.search = search;
 module.exports.currentlyPlaying = currentlyPlaying;
 module.exports.topPlayed = topPlayed;
-module.exports.playlist_add_playing = playlist_add_playing;
+module.exports.playlistAddPlaying = playlistAddPlaying;
 module.exports.getPlaylist = getPlaylist;
 module.exports.voiceTempPlaylist = voiceTempPlaylist;
 module.exports.unfollowPlaylist = unfollowPlaylist;
