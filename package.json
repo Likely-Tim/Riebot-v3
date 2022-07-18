@@ -23,6 +23,7 @@
     "utf-8-validate": "^5.0.9"
   },
   "scripts": {
-    "generate-docs": "jsdoc -c ./docs/config/config.json -d ./docs"
+    "generate-docs": "jsdoc -c ./docs/config/config.json -d ./docs",
+    "start:": "node index.js"
   }
 }
