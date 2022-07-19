@@ -1,5 +1,4 @@
 require('dotenv').config();
-require('newrelic');
 const fs = require('fs');
 const Keyv = require('keyv');
 const { KeyvFile } = require('keyv-file');
