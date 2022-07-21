@@ -10,6 +10,15 @@ const { Player } = require("discord-music-player");
 const player = new Player(client)
 client.player = player;
 
+const postgress = require('pg');
+const database = new postgress.Client({connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }});
+database.connect();
+database.query('CREATE TABLE IF NOT EXISTS database_index (NAME TEXT PRIMARY KEY, INDEX INT, LENGTH INT);');
+database.query('CREATE TABLE IF NOT EXISTS message_history (NAME TEXT PRIMARY KEY, CHANNEL_ID BIGINT, MESSAGE_ID BIGINT);');
+database.query('CREATE TABLE IF NOT EXISTS spotify_track (INDEX INT PRIMARY KEY, DATA TEXT);');
+database.query('CREATE TABLE IF NOT EXISTS spotify_artist (INDEX INT PRIMARY KEY, DATA TEXT);');
+database.query('CREATE TABLE IF NOT EXISTS spotify_album (INDEX INT PRIMARY KEY, DATA TEXT);');
+
 const { spotify_button_interaction } = require("./commands/spotify.js");
 const { spotify_playing_button_interaction} = require("./commands/spotify-playing.js");
 const { spotify_top_button_interaction } = require("./commands/spotify-top.js");
