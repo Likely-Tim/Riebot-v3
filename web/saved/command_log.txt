@@ -1,3 +1,10 @@
+Fhusion#2855,spotify,track_tielle
+Fhusion#2855,spotify-playing,N/A
+Fhusion#2855,spotify-playing,N/A
+Fhusion#2855,spotify,track_sp
+Fhusion#2855,spotify,track_aimer
+Fhusion#2855,spotify,track_aimer
+Fhusion#2855,spotify,track_aimer
 Fhusion#2855,spotify,album_twice
 Fhusion#2855,spotify,artist_juice
 Fhusion#2855,spotify,album_wow

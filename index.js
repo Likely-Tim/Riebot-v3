@@ -15,6 +15,7 @@ const database = new postgress.Client({connectionString: process.env.DATABASE_UR
 database.connect();
 database.query('CREATE TABLE IF NOT EXISTS database_index (NAME TEXT PRIMARY KEY, INDEX INT, LENGTH INT);');
 database.query('CREATE TABLE IF NOT EXISTS message_history (NAME TEXT PRIMARY KEY, CHANNEL_ID BIGINT, MESSAGE_ID BIGINT);');
+database.query('CREATE TABLE IF NOT EXISTS tokens (NAME TEXT PRIMARY KEY, TOKEN TEXT);');
 database.query('CREATE TABLE IF NOT EXISTS spotify_track (INDEX INT PRIMARY KEY, DATA TEXT);');
 database.query('CREATE TABLE IF NOT EXISTS spotify_artist (INDEX INT PRIMARY KEY, DATA TEXT);');
 database.query('CREATE TABLE IF NOT EXISTS spotify_album (INDEX INT PRIMARY KEY, DATA TEXT);');
