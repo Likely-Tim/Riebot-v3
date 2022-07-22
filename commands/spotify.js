@@ -94,7 +94,7 @@ module.exports = {
   async execute(client, interaction) {
     const type = interaction.options.getString('type');
     const query = interaction.options.getString('query');
-    const response = await spotify.search(type, query);
+    const response = await spotify.search(type.toLowerCase(), query);
     const result = await responseParse(response, type);
     const components = [];
     if (result[1] == 0) {

@@ -79,6 +79,7 @@ async function spotifyAccepted(code) {
   response = response.json();
   const accessTokenEncrypted = CryptoJS.AES.encrypt(response.accessToken, PASSWORD).toString();
   const refreshTokenEncrypted = CryptoJS.AES.encrypt(response.refreshToken, PASSWORD).toString();
+  console.log(response);
   await database.query(`INSERT INTO tokens VALUES ('spotifyRefresh', '${refreshTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
   await database.query(`INSERT INTO tokens VALUES ('spotifyAccess', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
 }
