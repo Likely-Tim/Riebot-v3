@@ -45,9 +45,8 @@ app.get("/log_data", (request, response) => {
   response.send({ "log": file_array });
 });
 
-app.get("/auth/accepted/spotify", (request, response) => {
-  console.log(request.url);
-  accept_spotify(request.query.code)
+app.get("/auth/spotify", (request, response) => {
+  spotify_accepted(request.query.code)
   .then((response) => {
     console.log(response);
   })
@@ -61,9 +60,9 @@ app.all("*", (request, response) => {
   response.sendFile(__dirname + "/docs" + request.url);
 });
 
-async function accept_spotify(code) {
+async function spotify_accepted(code) {
   let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "http://ec2-18-144-165-99.us-west-1.compute.amazonaws.com:3000/auth/accepted/spotify", "grant_type": "authorization_code"};
+  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "https://riebot-v3.herokuapp.com/auth/spotify", "grant_type": "authorization_code"};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
