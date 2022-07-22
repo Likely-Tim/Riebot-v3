@@ -7,6 +7,10 @@ const file = require("./helpers/file.js");
 const SPOTID = process.env.SPOTIFY_ID;
 const SPOTSECRET = process.env.SPOTIFY_SECRET;
 
+const postgress = require('pg');
+const database = new postgress.Client({connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }});
+database.connect();
+
 app.use(express.json());
 app.use(express.static('web'));
 
@@ -48,12 +52,11 @@ app.get("/log_data", (request, response) => {
 app.get("/auth/spotify", (request, response) => {
   spotify_accepted(request.query.code)
   .then((response) => {
-    console.log(response);
+    response.sendStatus(200);
   })
   .catch((error) => {
     console.log(error);
   });
-  response.sendStatus(200);
 });
 
 app.all("*", (request, response) => {
@@ -61,13 +64,17 @@ app.all("*", (request, response) => {
 });
 
 async function spotify_accepted(code) {
-  let url = "https://accounts.spotify.com/api/token";
-  let data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "https://riebot-v3.herokuapp.com/auth/spotify", "grant_type": "authorization_code"};
+  const url = "https://accounts.spotify.com/api/token";
+  const data = {"client_id": SPOTID, "client_secret": SPOTSECRET, "code": code, "redirect_uri": "https://riebot-v3.herokuapp.com/auth/spotify", "grant_type": "authorization_code"};
   let response = await fetch(url, {
       method: 'POST', 
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams(data)});
-  return response.json();
+  response = response.json();
+  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
+  const refreshTokenEncrypted = CryptoJS.AES.encrypt(response.refresh_token, PASSWORD).toString();
+  await database.query(`INSERT INTO tokens VALUES ('spotify_refresh', '${refreshTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
+  await database.query(`INSERT INTO tokens VALUES ('spotify_access', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
 }
 
 function keepAlive() {
