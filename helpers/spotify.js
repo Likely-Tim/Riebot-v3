@@ -19,7 +19,7 @@ const SPOTSECRET = process.env.SPOTIFY_SECRET;
  * @return {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_refresh\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyRefresh;`);
   const refreshTokenEncrypted = res.rows[0].token;
   const refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = 'https://accounts.spotify.com/api/token';
@@ -34,7 +34,7 @@ async function refreshToken() {
   }
   response = await response.json();
   const accessTokenEncrypted = CryptoJS.AES.encrypt(response.accessToken, PASSWORD).toString();
-  await database.query(`INSERT INTO tokens VALUES ('spotify_access', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
+  await database.query(`INSERT INTO tokens VALUES ('spotifyAccess', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
   console.log('Refreshed Spotify Creds');
   return true;
 }
@@ -47,7 +47,7 @@ async function refreshToken() {
  * @return {Promise<object>} Search Response
  */
 async function search(type, query) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
@@ -73,7 +73,7 @@ async function search(type, query) {
  * @return {Promise<string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = 'https://api.spotify.com/v1/me/player/currently-playing';
@@ -112,7 +112,7 @@ async function playlistAddPlaying(playlistId) {
   if (!uri.startsWith('spotify:track:')) {
     return false;
   }
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=${uri}`;
@@ -139,7 +139,7 @@ async function playlistAddPlaying(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function topPlayed(type, period) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
@@ -165,7 +165,7 @@ async function topPlayed(type, period) {
  * @return {Promise<object>} Spotify Result
  */
 async function getPlaylist(playlistId) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/`;
@@ -191,7 +191,7 @@ async function getPlaylist(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function nextPage(url) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const authorization = 'Bearer ' + accessToken;
@@ -217,7 +217,7 @@ async function nextPage(url) {
  * @return {Promise<object>} Spotify Playlist
  */
 async function createPlaylist(name, isPublic) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const authorization = 'Bearer ' + accessToken;
@@ -246,7 +246,7 @@ async function createPlaylist(name, isPublic) {
  * @return {Promise<boolean>} Successful or not
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const authorization = 'Bearer ' + accessToken;
@@ -274,7 +274,7 @@ async function addItemsToPlaylist(playlistId, uriArray) {
  * @return {boolean} Successful or not
  */
 async function unfollowPlaylist(playlistId) {
-  const res = await database.query('SELECT * FROM tokens WHERE name = \'spotify_access\';');
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
   const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const authorization = 'Bearer ' + accessToken;
