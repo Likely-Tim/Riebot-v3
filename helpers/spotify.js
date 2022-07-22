@@ -19,7 +19,7 @@ const SPOTSECRET = process.env.SPOTIFY_SECRET;
  * @return {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyRefresh;`);
+  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyRefresh';`);
   const refreshTokenEncrypted = res.rows[0].token;
   const refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = 'https://accounts.spotify.com/api/token';
