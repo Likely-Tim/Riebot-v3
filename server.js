@@ -53,7 +53,7 @@ app.get("/log_data", (request, response) => {
 
 app.get("/auth/spotify", (request, response) => {
   spotify_accepted(request.query.code)
-  .then((response) => {
+  .then(() => {
     response.sendStatus(200);
   })
   .catch((error) => {
