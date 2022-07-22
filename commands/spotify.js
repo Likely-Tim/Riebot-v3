@@ -1,9 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { InteractionCollector } = require('discord.js');
-const CryptoJS = require("crypto-js");
 const spotify = require('../helpers/spotify.js');
 const button = require('../helpers/buttons.js');
-const PASSWORD = process.env.PASSWORD;
 
 // Databases
 const postgress = require('pg');

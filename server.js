@@ -1,11 +1,13 @@
 const express = require("express");
 const app = express();
 const fetch = require("node-fetch");
-const lineByLine = require('n-readlines');
 const file = require("./helpers/file.js");
+const CryptoJS = require("crypto-js");
 
 const SPOTID = process.env.SPOTIFY_ID;
 const SPOTSECRET = process.env.SPOTIFY_SECRET;
+const PASSWORD = process.env.PASSWORD;
+
 
 const postgress = require('pg');
 const database = new postgress.Client({connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }});
