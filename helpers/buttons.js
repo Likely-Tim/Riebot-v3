@@ -1,40 +1,40 @@
-const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const {MessageActionRow, MessageButton, MessageSelectMenu} = require('discord.js');
 
-const next_button = new MessageButton().setCustomId('next').setStyle('SECONDARY').setEmoji("➡️");
-const prev_button = new MessageButton().setCustomId('prev').setStyle('SECONDARY').setEmoji("⬅️");
-const check_button = new MessageButton().setCustomId('save').setStyle('SECONDARY').setEmoji("✅");
-const refresh_button = new MessageButton().setCustomId('refresh').setStyle('SECONDARY').setEmoji("🔄");
-const search_button = new MessageButton().setCustomId('search').setStyle('PRIMARY').setLabel("Search");
-const anilist_button = new MessageButton().setCustomId('anilist').setLabel("Anilist").setStyle('PRIMARY');
-const mal_button = new MessageButton().setCustomId('mal').setLabel("MAL").setStyle('PRIMARY');
-const characters_button = new MessageButton().setCustomId('characters').setLabel("Characters").setStyle('PRIMARY');
-const va_button = new MessageButton().setCustomId('va').setLabel("temp").setStyle('SECONDARY');
-const disabled_next_button = new MessageButton().setCustomId('disabled_next').setStyle('SECONDARY').setEmoji("➡️").setDisabled(true);
-const disabled_prev_button = new MessageButton().setCustomId('disabled_prev').setStyle('SECONDARY').setEmoji("⬅️").setDisabled(true);
-const disabled_check_button = new MessageButton().setCustomId('disabled_save').setStyle('SECONDARY').setEmoji("✅").setDisabled(true);
-const disabled_refresh_button = new MessageButton().setCustomId('disabled_refresh').setStyle('SECONDARY').setEmoji("🔄").setDisabled(true);
-const disabled_search_button = new MessageButton().setCustomId('disabled_search').setStyle('PRIMARY').setLabel("Search").setDisabled(true);
+const nextButton = new MessageButton().setCustomId('next').setStyle('SECONDARY').setEmoji('➡️');
+const prevButton = new MessageButton().setCustomId('prev').setStyle('SECONDARY').setEmoji('⬅️');
+const checkButton = new MessageButton().setCustomId('save').setStyle('SECONDARY').setEmoji('✅');
+const refreshButton = new MessageButton().setCustomId('refresh').setStyle('SECONDARY').setEmoji('🔄');
+const searchButton = new MessageButton().setCustomId('search').setStyle('PRIMARY').setLabel('Search');
+const anilistButton = new MessageButton().setCustomId('anilist').setLabel('Anilist').setStyle('PRIMARY');
+const malButton = new MessageButton().setCustomId('mal').setLabel('MAL').setStyle('PRIMARY');
+const characterButton = new MessageButton().setCustomId('characters').setLabel('Characters').setStyle('PRIMARY');
+const vaButton = new MessageButton().setCustomId('va').setLabel('temp').setStyle('SECONDARY');
+const disabledNextButton = new MessageButton().setCustomId('disabled_next').setStyle('SECONDARY').setEmoji('➡️').setDisabled(true);
+const disabledPrevButton = new MessageButton().setCustomId('disabled_prev').setStyle('SECONDARY').setEmoji('⬅️').setDisabled(true);
+const disabledCheckButton = new MessageButton().setCustomId('disabled_save').setStyle('SECONDARY').setEmoji('✅').setDisabled(true);
+const disabledRefreshButton = new MessageButton().setCustomId('disabled_refresh').setStyle('SECONDARY').setEmoji('🔄').setDisabled(true);
+const disabledSearchButton = new MessageButton().setCustomId('disabled_search').setStyle('PRIMARY').setLabel('Search').setDisabled(true);
 
-let buttons = {};
-buttons.prev = prev_button;
-buttons.next = next_button;
-buttons.check = check_button;
-buttons.refresh = refresh_button;
-buttons.search = search_button;
-buttons.anilist = anilist_button;
-buttons.mal = mal_button;
-buttons.characters = characters_button;
-buttons.va = va_button;
-buttons.disabled_prev = disabled_prev_button;
-buttons.disabled_next = disabled_next_button;
-buttons.disabled_check = disabled_check_button;
-buttons.disabled_refresh = disabled_refresh_button;
-buttons.disabled_search = disabled_search_button;
+const buttons = {};
+buttons.prev = prevButton;
+buttons.next = nextButton;
+buttons.check = checkButton;
+buttons.refresh = refreshButton;
+buttons.search = searchButton;
+buttons.anilist = anilistButton;
+buttons.mal = malButton;
+buttons.characters = characterButton;
+buttons.va = vaButton;
+buttons.disabled_prev = disabledPrevButton;
+buttons.disabled_next = disabledNextButton;
+buttons.disabled_check = disabledCheckButton;
+buttons.disabled_refresh = disabledRefreshButton;
+buttons.disabled_search = disabledSearchButton;
 
 // Takes an array of button names and returns a MessageActionRow
-function action_row(input) {
-  let row = new MessageActionRow();
-  for(let i = 0; i < input.length; i++) {
+function actionRow(input) {
+  const row = new MessageActionRow();
+  for (let i = 0; i < input.length; i++) {
     row.addComponents(buttons[input[i]]);
   }
   return row;
@@ -42,10 +42,10 @@ function action_row(input) {
 
 // Takes an array of button names and buttons and returns a MessageActionRow
 function merge(input) {
-  let row = new MessageActionRow();
-  for(let i = 0; i < input.length; i++) {
-    let value = input[i];
-    if(typeof value == "string") {
+  const row = new MessageActionRow();
+  for (let i = 0; i < input.length; i++) {
+    const value = input[i];
+    if (typeof value === 'string') {
       row.addComponents(buttons[value]);
     } else {
       row.addComponents(value);
@@ -56,8 +56,8 @@ function merge(input) {
 
 // Takes a MessageActionRow and replaces a button
 function replace(input, replace, replacement) {
-  for(let i = 0; i < input.components.length; i++) {
-    if(input.components[i].customId == replace) {
+  for (let i = 0; i < input.components.length; i++) {
+    if (input.components[i].customId == replace) {
       input.components[i] = buttons[replacement];
       break;
     }
@@ -65,94 +65,92 @@ function replace(input, replace, replacement) {
   return input;
 }
 
-function change_label(button, label) {
+function changeLabel(button, label) {
   button.label = label;
   return button;
 }
 
-function return_button(input) {
+function returnButton(input) {
   return buttons[input];
 }
 
-function link_button(url) {
-  let button = new MessageButton().setLabel("Trailer").setStyle("LINK").setURL(url);
+function linkButton(url) {
+  const button = new MessageButton().setLabel('Trailer').setStyle('LINK').setURL(url);
   return button;
 }
 
-function add_select(options) {
-  let row = new MessageActionRow();
-  let select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
-  let option_object = [];
-  options = sanitize_input(options);
-  if(options == undefined) {
+function addSelect(options) {
+  const row = new MessageActionRow();
+  const select = new MessageSelectMenu().setCustomId('select').setPlaceholder('Nothing selected');
+  const optionObject = [];
+  options = sanitizeInput(options);
+  if (options == undefined) {
     return;
   }
-  for(let i = 0; i < options.length; i++) {
-    let object = {};
-    let option = options[i];
+  for (let i = 0; i < options.length; i++) {
+    const object = {};
+    const option = options[i];
     object.label = option;
     object.value = option;
-    option_object.push(object);
+    optionObject.push(object);
   }
-  if(option_object.length == 0) {
-    return;
-  } else {
-    select.addOptions(option_object);
+  if (optionObject.length != 0) {
+    select.addOptions(optionObject);
     row.addComponents(select);
     return row;
   }
 }
 
-function sanitize_input(options) {
+function sanitizeInput(options) {
   try {
-    let remove_index = [];
-    for(let i = 0; i < options.length; i++) {
+    let removeIndex = [];
+    for (let i = 0; i < options.length; i++) {
       let option = options[i];
-      if(option == "" || option == "N/A") {
-        remove_index.unshift(i);
+      if (option == '' || option == 'N/A') {
+        removeIndex.unshift(i);
         continue;
       }
-      option = option.replace(/#[A-Z]*[0-9]*: /, "");
-      option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, "");
+      option = option.replace(/#[A-Z]*[0-9]*: /, '');
+      option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, '');
       options[i] = option;
     }
-    for(let i = 0; i < remove_index.length; i++) {
-      options.splice(remove_index[i], 1);
+    for (let i = 0; i < removeIndex.length; i++) {
+      options.splice(removeIndex[i], 1);
     }
-    remove_index = [];
-    let songs = [];
-    for(let i = 0; i < options.length; i++) {
-      let song = options[i].match(/".*"/).toString();
-      if(songs.includes(song)) {
+    removeIndex = [];
+    const songs = [];
+    for (let i = 0; i < options.length; i++) {
+      const song = options[i].match(/".*"/).toString();
+      if (songs.includes(song)) {
         options[songs.indexOf(song)] = song;
-        remove_index.unshift(i);
+        removeIndex.unshift(i);
       } else {
         songs.push(song);
       }
     }
-    for(let i = 0; i < remove_index.length; i++) {
-      options.splice(remove_index[i], 1);
+    for (let i = 0; i < removeIndex.length; i++) {
+      options.splice(removeIndex[i], 1);
     }
-    for(let i = 0; i < options.length; i++) {
-      let option = options[i];
-      if(option.length > 100) {
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      if (option.length > 100) {
         options[i] = option.match(/".*"/).toString();
       }
     }
     options = options.splice(0, 25);
     return options;
   } catch {
-    return;
+    console.log('Error: Sanitize');
   }
 }
 
 // Disables all buttons in a MessageActionRow Array except Links
-function disable_all_buttons(input) {
-  for(let j = 0; j < input.length; j++) {
-    let action_row = input[j];
-    for(let i = 0; i < action_row.components.length; i++) {
-      if(action_row.components[i].style != "LINK") {
-        action_row.components[i].disabled = true;
+function disableAllButtons(input) {
+  for (let j = 0; j < input.length; j++) {
+    const actionRow = input[j];
+    for (let i = 0; i < actionRow.components.length; i++) {
+      if (actionRow.components[i].style != 'LINK') {
+        actionRow.components[i].disabled = true;
       }
     }
   }
@@ -160,24 +158,24 @@ function disable_all_buttons(input) {
 }
 
 // Takes a MessageSelectMenu and makes an option default
-function set_default(input, name) {
-  let options = input.options;
-  for(let i = 0; i < options.length; i++) {
-    if(options[i].default) {
+function setDefault(input, name) {
+  const options = input.options;
+  for (let i = 0; i < options.length; i++) {
+    if (options[i].default) {
       options[i].default = false;
     }
-    if(options[i].label == name) {
+    if (options[i].label == name) {
       options[i].default = true;
     }
   }
 }
 
-module.exports.disable_all_buttons = disable_all_buttons;
-module.exports.link_button = link_button;
-module.exports.add_select = add_select;
-module.exports.return_button = return_button;
-module.exports.action_row = action_row;
+module.exports.disableAllButtons = disableAllButtons;
+module.exports.linkButton = linkButton;
+module.exports.addSelect = addSelect;
+module.exports.returnButton = returnButton;
+module.exports.actionRow = actionRow;
 module.exports.merge = merge;
 module.exports.replace = replace;
-module.exports.change_label = change_label;
-module.exports.set_default = set_default;
+module.exports.changeLabel = changeLabel;
+module.exports.setDefault = setDefault;

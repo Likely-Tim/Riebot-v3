@@ -1,69 +1,68 @@
 const fs = require('fs');
 const Keyv = require('keyv');
-const { KeyvFile } = require('keyv-file');
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { InteractionCollector } = require('discord.js');
+const {KeyvFile} = require('keyv-file');
+const {SlashCommandBuilder} = require('@discordjs/builders');
+const {InteractionCollector} = require('discord.js');
 const spotify = require('../helpers/spotify.js');
 const button = require('../helpers/buttons.js');
 
 // Databases
 const messages = new Keyv({
   store: new KeyvFile({
-    filename: `storage/messages.json`,
+    filename: 'storage/messages.json',
     encode: JSON.stringify,
-    decode: JSON.parse
-  })
+    decode: JSON.parse,
+  }),
 });
 
-async function disable_previous(client, new_message) {
+async function disablePrevious(client, newMessage) {
   try {
-    const channel_id = await messages.get("spotify-playing_channel_id");
-    const channel = await client.channels.fetch(channel_id);
-    const old_message_id = await messages.get("spotify-playing_message_id");
-    const old_message = await channel.messages.fetch(old_message_id);
-    let buttons = button.disable_all_buttons(old_message.components);
-    old_message.edit({ components: buttons });
+    const channelId = await messages.get('spotify-playing_channelId');
+    const channel = await client.channels.fetch(channelId);
+    const oldMessageId = await messages.get('spotify-playing_message_id');
+    const oldMessage = await channel.messages.fetch(oldMessageId);
+    const buttons = button.disableAllButtons(oldMessage.components);
+    oldMessage.edit({components: buttons});
   } catch (error) {
-    console.log("[Spotify-Playing] Could not find previous message.");
+    console.log('[Spotify-Playing] Could not find previous message.');
   } finally {
-    await messages.set("spotify-playing_channel_id", new_message.channelId);
-    await messages.set("spotify-playing_message_id", new_message.id);
+    await messages.set('spotify-playing_channelId', newMessage.channelId);
+    await messages.set('spotify-playing_message_id', newMessage.id);
   }
 }
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('spotify-playing')
-		.setDescription('What is currently playing?'),
+  data: new SlashCommandBuilder()
+      .setName('spotify-playing')
+      .setDescription('What is currently playing?'),
 
-	async execute(client, interaction) {
-    let response = await spotify.currentlyPlaying(false);
-		await interaction.reply({ content: response, components: [button.action_row(["refresh", "check"])] });
+  async execute(client, interaction) {
+    const response = await spotify.currentlyPlaying(false);
+    await interaction.reply({content: response, components: [button.actionRow(['refresh', 'check'])]});
     const message = await interaction.fetchReply();
-    disable_previous(client, message);
-    spotify_playing_button_interaction(client, message);
-    return "N/A";
-	},
+    disablePrevious(client, message);
+    spotifyPlayingButtonInteraction(client, message);
+    return 'N/A';
+  },
 };
 
-function spotify_playing_button_interaction(client, message) {
-  let collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
-  collector.on("collect", async press => {
-    if(press.customId == 'save') {
-      if(press.message.content.startsWith('https://open.spotify.com/track/')) {
-        fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + '\n', { flag: 'a+' }, err => {
-          if(err) {
+function spotifyPlayingButtonInteraction(client, message) {
+  const collector = new InteractionCollector(client, {message, componentType: 'BUTTON'});
+  collector.on('collect', async (press) => {
+    if (press.customId == 'save') {
+      if (press.message.content.startsWith('https://open.spotify.com/track/')) {
+        fs.writeFile('./web/saved/spotify.txt', press.message.content.replace('https://open.spotify.com/track/', '') + '\n', {flag: 'a+'}, (err) => {
+          if (err) {
             console.log(err);
-            return;
           }
         });
       }
-      await press.update({ components: [button.action_row(["disabled_refresh", "disabled_check"])] })
+      await press.update({components: [button.actionRow(['disabled_refresh', 'disabled_check'])]});
     } else {
-      let response = await spotify.currentlyPlaying(false);
-      await press.update({ content: response });
+      const response = await spotify.currentlyPlaying(false);
+      await press.update({content: response});
     }
   });
 }
 
-module.exports.spotify_playing_button_interaction = spotify_playing_button_interaction;
+module.exports.spotifyPlayingButtonInteraction = spotifyPlayingButtonInteraction;

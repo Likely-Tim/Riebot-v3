@@ -1,24 +1,23 @@
-sendGetRequest("/spotify_data")
-.then(data => {
-  generate_iframe(data);
-});
+sendGetRequest('/spotify_data')
+    .then((data) => {
+      generateIframe(data);
+    });
 
 async function sendGetRequest(url) {
-  let response = await fetch(url, {
-      method: 'GET'});
+  const response = await fetch(url, {method: 'GET'});
   console.log(response);
   return response.json();
 }
 
-function generate_iframe(data) {
-  const container = document.getElementById("container");
-  let id = data.id;
-  for(let i = 0; i < id.length; i++) {
-    let base = "https://open.spotify.com/embed/track/"
-    let iframe = document.createElement("iframe");
+function generateIframe(data) {
+  const container = document.getElementById('container');
+  const id = data.id;
+  for (let i = 0; i < id.length; i++) {
+    const base = 'https://open.spotify.com/embed/track/';
+    const iframe = document.createElement('iframe');
     iframe.src = base + id[i];
-    iframe.width = "80%";
-    iframe.height = "275";
+    iframe.width = '80%';
+    iframe.height = '275';
     container.insertBefore(iframe, container.firstChild);
   }
 }

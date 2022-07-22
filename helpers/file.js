@@ -1,12 +1,11 @@
 const fs = require('fs');
 const prependFile = require('prepend-file');
-const lineByLine = require('n-readlines');
+const LineByLine = require('n-readlines');
 
 function append(path, string) {
-  fs.writeFile(path, string, { flag: 'a+' }, err => {
-    if(err) {
+  fs.writeFile(path, string, {flag: 'a+'}, (err) => {
+    if (err) {
       console.log(err);
-      return;
     }
   });
 }
@@ -15,17 +14,17 @@ function prepend(path, string) {
   prependFile(path, string);
 }
 
-function line_array(path) {
-  const spotify_line = new lineByLine(path);
+function lineArray(path) {
+  const spotifyLine = new LineByLine(path);
   let line;
-  let file_array = [];
-  while(line = spotify_line.next()) {
-    file_array.push(line.toString('ascii'));
+  let fileArray = [];
+  while (line == spotifyLine.next()) {
+    fileArray.push(line.toString('ascii'));
   }
-  file_array = [...new Set(file_array)];
-  return file_array;
+  fileArray = [...new Set(fileArray)];
+  return fileArray;
 }
 
 module.exports.append = append;
 module.exports.prepend = prepend;
-module.exports.line_array = line_array;
+module.exports.lineArray = lineArray;
