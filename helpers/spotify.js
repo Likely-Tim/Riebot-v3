@@ -49,9 +49,7 @@ async function refreshToken() {
 async function search(type, query) {
   const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
-  console.log(accessTokenEncrypted)
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  console.log(accessToken)
+  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD);
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
