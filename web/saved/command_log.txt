@@ -1,3 +1,5 @@
+Fhusion#2855,spotify,Artist_aimer
+Fhusion#2855,spotify,Track_milet
 Fhusion#2855,anime,show_odd
 Fhusion#2855,spotify,track_tielle
 Fhusion#2855,spotify-playing,N/A

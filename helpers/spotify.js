@@ -23,7 +23,7 @@ async function refreshToken() {
   const refreshTokenEncrypted = res.rows[0].token;
   const refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTID, client_secret: SPOTSECRET, grant_type: 'refreshToken', refreshToken: refreshToken};
+  const data = {client_id: SPOTID, client_secret: SPOTSECRET, grant_type: 'refresh_token', refresh_token: refreshToken};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -33,7 +33,7 @@ async function refreshToken() {
     return false;
   }
   response = await response.json();
-  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.accessToken, PASSWORD).toString();
+  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
   await database.query(`INSERT INTO tokens VALUES ('spotifyAccess', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
   console.log('Refreshed Spotify Creds');
   return true;
@@ -49,7 +49,7 @@ async function refreshToken() {
 async function search(type, query) {
   const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
   const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD);
+  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
