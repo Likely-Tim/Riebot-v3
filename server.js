@@ -4,6 +4,8 @@ const fetch = require('node-fetch');
 const file = require('./helpers/file.js');
 const CryptoJS = require('crypto-js');
 
+const arknights = require('./routes/arknights.js');
+
 const SPOTID = process.env.SPOTIFY_ID;
 const SPOTSECRET = process.env.SPOTIFY_SECRET;
 const PASSWORD = process.env.PASSWORD;
@@ -15,8 +17,10 @@ database.connect();
 app.use(express.json());
 app.use(express.static('web'));
 
+app.use('/arknights', arknights);
+
 app.all('/', (request, response) => {
-  response.sendFile(__dirname + '/web/index.html');
+  response.sendFile(__dirname + '/web/html/index.html');
 });
 
 app.all('/docs', (request, response) => {
@@ -24,19 +28,19 @@ app.all('/docs', (request, response) => {
 });
 
 app.get('/buttons', (request, response) => {
-  response.sendFile(__dirname + '/web/buttons.html');
+  response.sendFile(__dirname + '/web/html/buttons.html');
 });
 
 app.get('/spotify', (request, response) => {
-  response.sendFile(__dirname + '/web/spotify.html');
+  response.sendFile(__dirname + '/web/html/spotify.html');
 });
 
 app.get('/youtube', (request, response) => {
-  response.sendFile(__dirname + '/web/youtube.html');
+  response.sendFile(__dirname + '/web/html/youtube.html');
 });
 
 app.get('/log', (request, response) => {
-  response.sendFile(__dirname + '/web/log.html');
+  response.sendFile(__dirname + '/web/html/log.html');
 });
 
 app.get('/spotify_data', (request, response) => {

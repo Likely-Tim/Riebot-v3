@@ -13,10 +13,12 @@
     "express": "^4.17.3",
     "keyv": "^4.1.1",
     "keyv-file": "^0.2.0",
+    "level": "^8.0.0",
     "n-readlines": "^1.0.1",
     "node-fetch": "^2.6.1",
     "pg": "^8.7.3",
-    "prepend-file": "^2.0.1"
+    "prepend-file": "^2.0.1",
+    "puppeteer": "^15.5.0"
   },
   "overrides": {
     "@discordjs/opus": "^0.8.0"
