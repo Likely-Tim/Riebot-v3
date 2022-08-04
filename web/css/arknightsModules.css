@@ -15,12 +15,16 @@ body {
   font: 500 1.2em/1.2 'Roboto', sans-serif;
 }
 
-.container {
+div.container {
   margin: 0 auto;
   border-top: 5px solid #435757;
   background-color: rgba(255, 255, 255, .2);
   box-shadow: 0 0 20px rgba(0, 0, 0, .1);
   user-select: none;
+}
+
+img {
+  margin: 5px;
 }
 
 h1 {
@@ -95,10 +99,12 @@ input:checked {
 }
 
 label {
-  display: block;
+  display: flex;
+  align-items: center;
   position: relative;
   padding: 15px 0 15px 45px;
   border-top: 1px dashed #fff;
+  width: 100%;
   order: 2;
   cursor: pointer;
   animation: undone .5s;
