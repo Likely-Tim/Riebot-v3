@@ -62,10 +62,10 @@ app.get('/log_data', (request, response) => {
   response.send({log: fileArray});
 });
 
-app.get('/auth/spotify', async (request, response) => {
+app.get('/auth/spotify/', async (request, response) => {
   try {
     await spotifyAccepted(request.query.code);
-    response.sendStatus(200);
+    response.redirect('/?spotifySuccess=true');
   } catch (error) {
     console.log(error);
   }
