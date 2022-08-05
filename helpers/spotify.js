@@ -15,7 +15,7 @@ const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
  * @return {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
-  const refreshToken = await dbToken("spotifyRefresh");
+  const refreshToken = await dbToken.get("spotifyRefresh");
   const url = 'https://accounts.spotify.com/api/token';
   const data = {client_id: SPOTIFY_ID, client_secret: SPOTIFY_SECRET, grant_type: 'refresh_token', refresh_token: refreshToken};
   let response = await fetch(url, {
