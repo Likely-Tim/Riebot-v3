@@ -77,7 +77,7 @@ app.all('*', (request, response) => {
 
 async function spotifyAccepted(code) {
   const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTID, client_secret: SPOTSECRET, code, redirect_uri: 'http://44.242.76.174/', grant_type: 'authorization_code'};
+  const data = {client_id: SPOTID, client_secret: SPOTSECRET, code, redirect_uri: 'http://44.242.76.174/auth/spotify/', grant_type: 'authorization_code'};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},

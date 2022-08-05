@@ -3,7 +3,6 @@
  */
 
 const fetch = require('node-fetch');
-const CryptoJS = require('crypto-js');
 
 const dbToken = require('../databaseHelpers/tokens.js');
 
