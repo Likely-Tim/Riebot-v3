@@ -5,13 +5,10 @@
 const fetch = require('node-fetch');
 const CryptoJS = require('crypto-js');
 
-const postgress = require('pg');
-const database = new postgress.Client({connectionString: process.env.DATABASE_URL, ssl: {rejectUnauthorized: false}});
-database.connect();
+const dbToken = require('../databaseHelpers/tokens.js');
 
-const PASSWORD = process.env.PASSWORD;
-const SPOTID = process.env.SPOTIFY_ID;
-const SPOTSECRET = process.env.SPOTIFY_SECRET;
+const SPOTIFY_ID = process.env.SPOTIFY_ID;
+const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
 
 /**
  * Refreshes Stored Spotify Access Token
@@ -19,11 +16,9 @@ const SPOTSECRET = process.env.SPOTIFY_SECRET;
  * @return {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyRefresh';`);
-  const refreshTokenEncrypted = res.rows[0].token;
-  const refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const refreshToken = await dbToken("spotifyRefresh");
   const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTID, client_secret: SPOTSECRET, grant_type: 'refresh_token', refresh_token: refreshToken};
+  const data = {client_id: SPOTIFY_ID, client_secret: SPOTIFY_SECRET, grant_type: 'refresh_token', refresh_token: refreshToken};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -33,8 +28,7 @@ async function refreshToken() {
     return false;
   }
   response = await response.json();
-  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  await database.query(`INSERT INTO tokens VALUES ('spotifyAccess', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
+  await dbToken.put("spotifyAccess", response.access_token);
   console.log('Refreshed Spotify Creds');
   return true;
 }
@@ -47,9 +41,7 @@ async function refreshToken() {
  * @return {Promise<object>} Search Response
  */
 async function search(type, query) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
@@ -73,9 +65,7 @@ async function search(type, query) {
  * @return {Promise<string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const url = 'https://api.spotify.com/v1/me/player/currently-playing';
   const authorization = 'Bearer ' + accessToken;
   let response = await fetch(url, {
@@ -112,9 +102,7 @@ async function playlistAddPlaying(playlistId) {
   if (!uri.startsWith('spotify:track:')) {
     return false;
   }
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=${uri}`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
@@ -139,9 +127,7 @@ async function playlistAddPlaying(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function topPlayed(type, period) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
@@ -165,9 +151,7 @@ async function topPlayed(type, period) {
  * @return {Promise<object>} Spotify Result
  */
 async function getPlaylist(playlistId) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/`;
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
@@ -191,9 +175,7 @@ async function getPlaylist(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function nextPage(url) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
     method: 'GET',
@@ -217,9 +199,7 @@ async function nextPage(url) {
  * @return {Promise<object>} Spotify Playlist
  */
 async function createPlaylist(name, isPublic) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const authorization = 'Bearer ' + accessToken;
   const url = 'https://api.spotify.com/v1/users/fhusion/playlists';
   const data = {name, public: isPublic};
@@ -246,9 +226,7 @@ async function createPlaylist(name, isPublic) {
  * @return {Promise<boolean>} Successful or not
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const authorization = 'Bearer ' + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
   const data = {uris: uriArray};
@@ -274,9 +252,7 @@ async function addItemsToPlaylist(playlistId, uriArray) {
  * @return {boolean} Successful or not
  */
 async function unfollowPlaylist(playlistId) {
-  const res = await database.query(`SELECT * FROM tokens WHERE name = 'spotifyAccess';`);
-  const accessTokenEncrypted = res.rows[0].token;
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("spotifyAccess");
   const authorization = 'Bearer ' + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
   const response = await fetch(url, {

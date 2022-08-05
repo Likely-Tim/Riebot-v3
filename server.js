@@ -4,6 +4,10 @@ const fetch = require('node-fetch');
 const file = require('./helpers/file.js');
 const CryptoJS = require('crypto-js');
 
+// Database
+const dbToken = require('./databaseHelpers/tokens.js');
+
+// Routing
 const arknights = require('./routes/arknights.js');
 
 const SPOTID = process.env.SPOTIFY_ID;
@@ -58,14 +62,13 @@ app.get('/log_data', (request, response) => {
   response.send({log: fileArray});
 });
 
-app.get('/auth/spotify', (request, response) => {
-  spotifyAccepted(request.query.code)
-      .then(() => {
-        response.sendStatus(200);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+app.get('/auth/spotify', async (request, response) => {
+  try {
+    await spotifyAccepted(request.query.code);
+    response.sendStatus(200);
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 app.all('*', (request, response) => {
@@ -74,17 +77,15 @@ app.all('*', (request, response) => {
 
 async function spotifyAccepted(code) {
   const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTID, client_secret: SPOTSECRET, code, redirect_uri: 'https://riebot-v3.herokuapp.com/auth/spotify', grant_type: 'authorization_code'};
+  const data = {client_id: SPOTID, client_secret: SPOTSECRET, code, redirect_uri: 'http://44.242.76.174/', grant_type: 'authorization_code'};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: new URLSearchParams(data),
   });
   response = await response.json();
-  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.access_token, PASSWORD).toString();
-  const refreshTokenEncrypted = CryptoJS.AES.encrypt(response.refresh_token, PASSWORD).toString();
-  await database.query(`INSERT INTO tokens VALUES ('spotifyAccess', '${accessTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
-  await database.query(`INSERT INTO tokens VALUES ('spotifyRefresh', '${refreshTokenEncrypted}') ON CONFLICT (name) DO UPDATE SET token = EXCLUDED.token;`);
+  await dbToken.put("spotifyAccess", response.access_token);
+  await dbToken.put("spotifyRefresh", response.refresh_token);
 }
 
 function keepAlive() {
