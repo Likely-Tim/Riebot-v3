@@ -68,6 +68,7 @@ app.get('/auth/spotify/', async (request, response) => {
     response.redirect('/?spotifySuccess=true');
   } catch (error) {
     console.log(error);
+    response.redirect('/?spotifySuccess=false');
   }
 });
 
