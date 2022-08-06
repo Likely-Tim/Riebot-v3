@@ -1,47 +1,33 @@
 const fetch = require('node-fetch');
-const CryptoJS = require('crypto-js');
-const Keyv = require('keyv');
-const {KeyvFile} = require('keyv-file');
 
 const MALID = process.env.MAL_ID;
 const MALSecret = process.env.MAL_SECRET;
-const PASSWORD = process.env.PASSWORD;
 
-const tokens = new Keyv({
-  store: new KeyvFile({
-    filename: 'storage/tokens.json',
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
+const dbToken = require('../databaseHelpers/tokens.js');
 
 function queryCreate(args) {
   const query = args.join('+');
   return encodeURIComponent(query);
 }
 
-async function postRefreshMAL() {
+async function malRefreshToken() {
   const url = 'https://myanimelist.net/v1/oauth2/token';
-  let refreshTokenEncrypted = await tokens.get('mal_refresh');
-  const refreshToken = CryptoJS.AES.decrypt(refreshTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
-  const data = {client_id: MALID, client_secret: MALSecret, grant_type: 'refreshToken', refreshToken};
+  const refreshToken = await dbToken.get("malRefresh");
+  const data = {client_id: MALID, client_secret: MALSecret, grant_type: 'refreshToken', refreshToken: refreshToken};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: new URLSearchParams(data),
   });
   response = await response.json();
-  const accessTokenEncrypted = CryptoJS.AES.encrypt(response.accessToken, PASSWORD).toString();
-  await tokens.set('mal_access', accessTokenEncrypted);
-  refreshTokenEncrypted = CryptoJS.AES.encrypt(response.refreshToken, PASSWORD).toString();
-  await tokens.set('mal_refresh', refreshTokenEncrypted);
+  await dbToken.put("malAccess", response.access_token);
+  await dbToken.put("malRefresh", response.refresh_token);
 }
 
 async function malSearch(query) {
   query = queryCreate(query.split(' '));
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
-  const accessTokenEncrypted = await tokens.get('mal_access');
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("malAccess");
   const authorization = 'Bearer ' + accessToken;
   let response = await fetch(url, {
     method: 'GET',
@@ -51,7 +37,7 @@ async function malSearch(query) {
     return 'No show found!';
   }
   if (response.status == 401) {
-    await postRefreshMAL();
+    await malRefreshToken();
     return await malSearch(query);
   }
   response = await response.json();
@@ -66,15 +52,14 @@ async function malSearch(query) {
 
 async function malSearchId(id) {
   const url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,openingThemes,endingThemes,mean,studio,status,num_episodes,rank,studios`;
-  const accessTokenEncrypted = await tokens.get('mal_access');
-  const accessToken = CryptoJS.AES.decrypt(accessTokenEncrypted, PASSWORD).toString(CryptoJS.enc.Utf8);
+  const accessToken = await dbToken.get("malAccess");
   const authorization = 'Bearer ' + accessToken;
   const response = await fetch(url, {
     method: 'GET',
     headers: {Authorization: authorization},
   });
   if (response.status == 401) {
-    await postRefreshMAL();
+    await malRefreshToken();
     return await malSearchId(id);
   }
   return response.json();
