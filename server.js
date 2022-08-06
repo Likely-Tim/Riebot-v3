@@ -1,27 +1,16 @@
 const express = require('express');
 const app = express();
-const fetch = require('node-fetch');
 const file = require('./helpers/file.js');
-const CryptoJS = require('crypto-js');
-
-// Database
-const dbToken = require('./databaseHelpers/tokens.js');
 
 // Routing
 const arknights = require('./routes/arknights.js');
-
-const SPOTID = process.env.SPOTIFY_ID;
-const SPOTSECRET = process.env.SPOTIFY_SECRET;
-const PASSWORD = process.env.PASSWORD;
-
-const postgress = require('pg');
-const database = new postgress.Client({connectionString: process.env.DATABASE_URL, ssl: {rejectUnauthorized: false}});
-database.connect();
+const auth = require('./routes/auth.js');
 
 app.use(express.json());
 app.use(express.static('web'));
 
 app.use('/arknights', arknights);
+app.use('/auth', auth);
 
 app.all('/', (request, response) => {
   response.sendFile(__dirname + '/web/html/index.html');
@@ -62,35 +51,9 @@ app.get('/log_data', (request, response) => {
   response.send({log: fileArray});
 });
 
-app.get('/auth/spotify/', async (request, response) => {
-  try {
-    await spotifyAccepted(request.query.code);
-    response.redirect('/?spotifySuccess=true');
-  } catch (error) {
-    console.log(error);
-    response.redirect('/?spotifySuccess=false');
-  }
-});
-
 app.all('*', (request, response) => {
   response.sendFile(__dirname + '/docs' + request.url);
 });
-
-async function spotifyAccepted(code) {
-  const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTID, client_secret: SPOTSECRET, code, redirect_uri: 'http://44.242.76.174/auth/spotify/', grant_type: 'authorization_code'};
-  let response = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: new URLSearchParams(data),
-  });
-  if (response.status != 200) {
-    throw new Error(response.statusText);
-  }
-  response = await response.json();
-  await dbToken.put("spotifyAccess", response.access_token);
-  await dbToken.put("spotifyRefresh", response.refresh_token);
-}
 
 function keepAlive() {
   app.listen(process.env.PORT || 3000, () => {
