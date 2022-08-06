@@ -10,11 +10,15 @@ const dbToken = require('../databaseHelpers/tokens.js');
 const SPOTIFY_ID = process.env.SPOTIFY_ID;
 const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
 const MAL_ID = process.env.MAL_ID;
+const MAL_SECRET = process.env.MAL_SECRET;
 
 router.get('/', (request, response) => {
     if (request.query.type == "mal") {
+      // When code challenge method is plain, code verifier = code challenge
       const codeVerifier = generatePKCECodeVerifier();
+      await dbToken.put("malCodeVerifier", codeVerifier);
       const state = generatePKCECodeVerifier();
+      await dbToken.put("malState", state);
       response.redirect(`https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${MAL_ID}&state=${state}&redirect_uri=http://44.242.76.174/auth/mal&code_challenge=${codeVerifier}&code_challenge_method=plain`);
     } else {
       response.redirect('/');
@@ -33,11 +37,21 @@ router.get('/spotify', async (request, response) => {
 
 router.get('/mal', async (request, response) => {
   console.log(request);
-})
+  try {
+    originalState = await dbToken.get("malState");
+    if (originalState != request.query.state) {
+      throw new Error("MAL state did not match.")
+    }
+    await malAccepted(request.query.code);
+  } catch (error) {
+    console.log(error);
+    response.redirect('/?malSuccess=false');
+  }
+});
 
 async function spotifyAccepted(code) {
   const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTIFY_ID, client_secret: SPOTIFY_SECRET, code, redirect_uri: 'http://44.242.76.174/auth/spotify', grant_type: 'authorization_code'};
+  const data = {code: code, redirect_uri: 'http://44.242.76.174/auth/spotify', grant_type: 'authorization_code'};
   let response = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -49,6 +63,18 @@ async function spotifyAccepted(code) {
   response = await response.json();
   await dbToken.put("spotifyAccess", response.access_token);
   await dbToken.put("spotifyRefresh", response.refresh_token);
+}
+
+async function malAccepted(code) {
+  const url = "https://myanimelist.net/v1/oauth2/token";
+  codeVerifier = await dbToken.get("malCodeVerifier");
+  const data = {client_id: MAL_ID, client_secret: MAL_SECRET, grant_type: "authorization_code", code: code, redirect_uri: "http://44.242.76.174/auth/mal", code_verifier: codeVerifier};
+  let response = await fetch(url, {
+    method: "POST",
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: data,
+  });
+  console.log(response);
 }
 
 function generatePKCECodeVerifier() {
