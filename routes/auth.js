@@ -40,9 +40,10 @@ router.get('/mal', async (request, response) => {
   try {
     originalState = await dbToken.get("malState");
     if (originalState != request.query.state) {
-      throw new Error("MAL state did not match.")
+      throw new Error("MAL state did not match.");
     }
     await malAccepted(request.query.code);
+    response.redirect('/?malSuccess=true');
   } catch (error) {
     console.log(error);
     response.redirect('/?malSuccess=false');
@@ -51,10 +52,11 @@ router.get('/mal', async (request, response) => {
 
 async function spotifyAccepted(code) {
   const url = 'https://accounts.spotify.com/api/token';
+  const authorization = Buffer.from(SPOTIFY_ID + ":" + SPOTIFY_SECRET).toString("base64");
   const data = {code: code, redirect_uri: 'http://44.242.76.174/auth/spotify', grant_type: 'authorization_code'};
   let response = await fetch(url, {
     method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': 'Basic ' + authorization},
     body: new URLSearchParams(data),
   });
   if (response.status != 200) {
@@ -67,14 +69,19 @@ async function spotifyAccepted(code) {
 
 async function malAccepted(code) {
   const url = "https://myanimelist.net/v1/oauth2/token";
-  codeVerifier = await dbToken.get("malCodeVerifier");
+  const codeVerifier = await dbToken.get("malCodeVerifier");
   const data = {client_id: MAL_ID, client_secret: MAL_SECRET, grant_type: "authorization_code", code: code, redirect_uri: "http://44.242.76.174/auth/mal", code_verifier: codeVerifier};
   let response = await fetch(url, {
     method: "POST",
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: data,
+    body: new URLSearchParams(data),
   });
-  console.log(response);
+  if (response.status != 200) {
+    throw new Error(response.status);
+  }
+  response = await response.json();
+  await dbToken.put("malAccess", response.access_token);
+  await dbToken.put("malRefresh", response.refresh_token);
 }
 
 function generatePKCECodeVerifier() {
