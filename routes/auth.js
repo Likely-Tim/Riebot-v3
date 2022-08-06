@@ -12,7 +12,7 @@ const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
 const MAL_ID = process.env.MAL_ID;
 const MAL_SECRET = process.env.MAL_SECRET;
 
-router.get('/', (request, response) => {
+router.get('/', async (request, response) => {
     if (request.query.type == "mal") {
       // When code challenge method is plain, code verifier = code challenge
       const codeVerifier = generatePKCECodeVerifier();
