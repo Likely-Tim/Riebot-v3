@@ -84,6 +84,9 @@ async function spotifyAccepted(code) {
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: new URLSearchParams(data),
   });
+  if (response.status != 200) {
+    throw new Error(response.statusText);
+  }
   response = await response.json();
   await dbToken.put("spotifyAccess", response.access_token);
   await dbToken.put("spotifyRefresh", response.refresh_token);
