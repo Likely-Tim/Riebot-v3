@@ -1,18 +1,18 @@
-document.getElementById('refreshButton').addEventListener("click", refresh);
+document.getElementById("refreshButton").addEventListener("click", refresh);
 
-render()
+render();
 
 async function refresh() {
-  let response = await sendGetRequest('/arknights/modules/refresh');
+  let response = await sendGetRequest("/arknights/modules/refresh");
   console.log(response.operatorNames);
 }
 
 async function render() {
-  let operators = await sendGetRequest('/arknights/modules/operators');
+  let operators = await sendGetRequest("/arknights/modules/operators");
   let keys = Object.keys(operators).reverse();
   for (let i = 0; i < keys.length; i++) {
     let name = capitalizeFirstLetter(keys[i]);
-    let checked = (operators[keys[i]][1] === "true");
+    let checked = operators[keys[i]][1] === "true";
     const input = document.createElement("input");
     input.setAttribute("type", "checkbox");
     input.setAttribute("id", keys[i]);
@@ -22,7 +22,7 @@ async function render() {
     label.setAttribute("for", keys[i]);
     const labelText = document.createTextNode(name);
     label.appendChild(labelText);
-    console.log(operators[keys[i]][0])
+    console.log(operators[keys[i]][0]);
     const image = document.createElement("img");
     image.setAttribute("src", operators[keys[i]][0]);
     label.prepend(image);
@@ -32,20 +32,20 @@ async function render() {
 }
 
 async function checkboxChanged() {
-  let obj = {"id": this.id, "checked": this.checked};
+  let obj = { id: this.id, checked: this.checked };
   sendPostRequest("/arknights/modules/operators", JSON.stringify(obj));
 }
 
 async function sendGetRequest(url) {
-  const response = await fetch(url, {method: 'GET'});
+  const response = await fetch(url, { method: "GET" });
   return response.json();
 }
 
 async function sendPostRequest(url, body) {
   const response = await fetch(url, {
-    "headers": {"Content-Type": "application/json"},
-    "method": 'POST',
-    "body": body
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    body: body,
   });
 }
 

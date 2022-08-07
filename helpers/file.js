@@ -1,9 +1,9 @@
-const fs = require('fs');
-const prependFile = require('prepend-file');
-const LineByLine = require('n-readlines');
+const fs = require("fs");
+const prependFile = require("prepend-file");
+const LineByLine = require("n-readlines");
 
 function append(path, string) {
-  fs.writeFile(path, string, {flag: 'a+'}, (err) => {
+  fs.writeFile(path, string, { flag: "a+" }, (err) => {
     if (err) {
       console.log(err);
     }
@@ -19,7 +19,7 @@ function lineArray(path) {
   let line;
   let fileArray = [];
   while (line == spotifyLine.next()) {
-    fileArray.push(line.toString('ascii'));
+    fileArray.push(line.toString("ascii"));
   }
   fileArray = [...new Set(fileArray)];
   return fileArray;

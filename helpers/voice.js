@@ -1,13 +1,27 @@
-const {songQueueEmbedBuilder, songCurrentSongEmbedBuilder, basicEmbedBuilder} = require('./embed.js');
-const {getPlaylist, voiceTempPlaylist, unfollowPlaylist} = require('./spotify.js');
+const {
+  songQueueEmbedBuilder,
+  songCurrentSongEmbedBuilder,
+  basicEmbedBuilder,
+} = require("./embed.js");
+const {
+  getPlaylist,
+  voiceTempPlaylist,
+  unfollowPlaylist,
+} = require("./spotify.js");
 
-const SPOTIFY_PLAYLIST_LINK = 'https://open.spotify.com/playlist/';
-const spotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
+const SPOTIFY_PLAYLIST_LINK = "https://open.spotify.com/playlist/";
+const spotifyPlaylistRegex =
+  /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-)+)(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
 let queue = null;
 
 function createQueue(player, channelId) {
   if (!queue || queue.destroyed) {
-    queue = player.createQueue(channelId, {leaveOnEnd: false, leaveOnStop: false, leaveOnEmpty: true, deafenOnJoin: true});
+    queue = player.createQueue(channelId, {
+      leaveOnEnd: false,
+      leaveOnStop: false,
+      leaveOnEmpty: true,
+      deafenOnJoin: true,
+    });
   }
   return queue;
 }
@@ -29,7 +43,7 @@ async function linkPlay(link) {
 function getSpotifyId(url) {
   url = new URL(url);
   const path = url.pathname;
-  return path.substring(path.lastIndexOf('/') + 1);
+  return path.substring(path.lastIndexOf("/") + 1);
 }
 
 async function linkPlaylist(link) {
@@ -45,7 +59,7 @@ async function linkPlaylist(link) {
       try {
         await queue.playlist(playlistLink);
       } catch (err) {
-        console.log('Some Playlist Error');
+        console.log("Some Playlist Error");
       }
       await unfollowPlaylist(playlists[i]);
     }
@@ -68,7 +82,7 @@ function getProgressBar() {
   if (queue.isPlaying) {
     return queue.createProgressBar().toString();
   } else {
-    return '';
+    return "";
   }
 }
 
@@ -86,7 +100,7 @@ function skipSong() {
     return basicEmbedBuilder(description);
   } catch (err) {
     console.log(err);
-    return basicEmbedBuilder('Unable to skip.');
+    return basicEmbedBuilder("Unable to skip.");
   }
 }
 
@@ -96,7 +110,7 @@ function shuffle() {
     return getSongQueue();
   } catch (err) {
     console.log(err);
-    return basicEmbedBuilder('Unable to shuffle.');
+    return basicEmbedBuilder("Unable to shuffle.");
   }
 }
 

@@ -2,11 +2,11 @@ let index = 0;
 showSlides(index);
 
 function showSlides() {
-  const slides = document.getElementsByClassName('slide');
+  const slides = document.getElementsByClassName("slide");
   for (let i = 0; i < slides.length; i++) {
-    slides[i].style.display = 'none';
+    slides[i].style.display = "none";
   }
-  slides[index].style.display = 'block';
+  slides[index].style.display = "block";
   index++;
   if (slides.length === index) {
     index = 0;

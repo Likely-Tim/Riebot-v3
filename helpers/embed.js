@@ -1,7 +1,8 @@
-const {MessageEmbed} = require('discord.js');
+const { MessageEmbed } = require("discord.js");
 
-const MAL_LOGO = 'https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ';
-const ANI_LOGO = 'https://anilist.co/img/icons/android-chrome-512x512.png';
+const MAL_LOGO =
+  "https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ";
+const ANI_LOGO = "https://anilist.co/img/icons/android-chrome-512x512.png";
 
 function basicEmbedBuilder(string) {
   const result = new MessageEmbed();
@@ -11,8 +12,8 @@ function basicEmbedBuilder(string) {
 
 function songCurrentSongEmbedBuilder(response, progressBar) {
   const result = new MessageEmbed();
-  result.setTitle('Current Song');
-  let description = 'Nothing Playing.';
+  result.setTitle("Current Song");
+  let description = "Nothing Playing.";
   if (response != undefined) {
     description = `${response.name}\n\n${progressBar}`;
     result.setThumbnail(response.thumbnail);
@@ -23,10 +24,10 @@ function songCurrentSongEmbedBuilder(response, progressBar) {
 
 function songQueueEmbedBuilder(response) {
   const result = new MessageEmbed();
-  result.setTitle('Current Queue');
+  result.setTitle("Current Queue");
   let description = songQueueDescription(response);
-  if (description == '') {
-    description = 'Nothing Playing';
+  if (description == "") {
+    description = "Nothing Playing";
   } else {
     result.setThumbnail(response[0].thumbnail);
   }
@@ -35,7 +36,7 @@ function songQueueEmbedBuilder(response) {
 }
 
 function songQueueDescription(response) {
-  let result = '';
+  let result = "";
   for (let i = 0; i < response.length; i++) {
     const entry = `${i + 1}. [${response[i].name}](${response[i].url})\n`;
     if (result.length + entry.length >= 4050) {
@@ -50,34 +51,49 @@ function songQueueDescription(response) {
 
 function showEmbedBuilderMal(response) {
   const result = new MessageEmbed();
-  if (response == 'No show found!') {
+  if (response == "No show found!") {
     return result.setDescription(response);
   }
   if (response.error != undefined) {
-    return [defaultEmbed(), ''];
+    return [defaultEmbed(), ""];
   }
   result.setTitle(response.title);
-  const link = 'https://myanimelist.net/anime/' + response.id;
+  const link = "https://myanimelist.net/anime/" + response.id;
   result.setURL(link);
-  result.setAuthor({name: studioList('mal', response.studios), iconURL: MAL_LOGO});
+  result.setAuthor({
+    name: studioList("mal", response.studios),
+    iconURL: MAL_LOGO,
+  });
   result.setDescription(response.synopsis);
   result.setThumbnail(response.main_picture.large);
   let openingThemes = songList(response.openingThemes);
   let endingThemes = songList(response.endingThemes);
   const songs = openingThemes + endingThemes;
   if (openingThemes.length > 1024) {
-    openingThemes = openingThemes.substring(0, 1020) + '...';
+    openingThemes = openingThemes.substring(0, 1020) + "...";
   }
   if (endingThemes.length > 1024) {
-    endingThemes = endingThemes.substring(0, 1020) + '...';
+    endingThemes = endingThemes.substring(0, 1020) + "...";
   }
   result.addFields(
-      {name: ':notes: Opening Themes', value: openingThemes, inline: true},
-      {name: ':notes: Ending Themes', value: endingThemes, inline: true},
-      {name: '\u200B', value: '\u200B'},
-      {name: ':trophy: Rank', value: `➤ ${nullCheck(response.rank)}`, inline: true},
-      {name: ':alarm_clock: Episodes', value: `➤ ${episodeCheck(response.num_episodes)}`, inline: true},
-      {name: ':100: Rating', value: `➤ ${nullCheck(response.mean)}`, inline: true},
+    { name: ":notes: Opening Themes", value: openingThemes, inline: true },
+    { name: ":notes: Ending Themes", value: endingThemes, inline: true },
+    { name: "\u200B", value: "\u200B" },
+    {
+      name: ":trophy: Rank",
+      value: `➤ ${nullCheck(response.rank)}`,
+      inline: true,
+    },
+    {
+      name: ":alarm_clock: Episodes",
+      value: `➤ ${episodeCheck(response.num_episodes)}`,
+      inline: true,
+    },
+    {
+      name: ":100: Rating",
+      value: `➤ ${nullCheck(response.mean)}`,
+      inline: true,
+    }
   );
   result.setColor(colorPicker(response.status));
   return [result, songs];
@@ -87,19 +103,26 @@ function showEmbedBuilderAnilist(response) {
   const result = new MessageEmbed();
   result.setTitle(response.title.romaji);
   result.setURL(response.siteUrl);
-  result.setAuthor({name: studioList('anilist', response.studios.nodes), iconURL: ANI_LOGO});
+  result.setAuthor({
+    name: studioList("anilist", response.studios.nodes),
+    iconURL: ANI_LOGO,
+  });
   if (response.description == null) {
-    result.setDescription('TBA');
+    result.setDescription("TBA");
   } else {
-    result.setDescription(response.description.replaceAll('<br>', ''));
+    result.setDescription(response.description.replaceAll("<br>", ""));
   }
   result.setThumbnail(response.coverImage.extraLarge);
   const rank = anilistRank(response.rankings);
   result.addFields(
-      {name: '\u200B', value: '\u200B'},
-      {name: ':trophy: Rank', value: `➤ ${rank}`, inline: true},
-      {name: ':alarm_clock: Episodes', value: `➤ ${response.episodes}`, inline: true},
-      {name: ':100: Rating', value: `➤ ${response.meanScore}`, inline: true},
+    { name: "\u200B", value: "\u200B" },
+    { name: ":trophy: Rank", value: `➤ ${rank}`, inline: true },
+    {
+      name: ":alarm_clock: Episodes",
+      value: `➤ ${response.episodes}`,
+      inline: true,
+    },
+    { name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true }
   );
   result.setColor(colorPicker(response.status));
   return [result, response.idMal, response.trailer];
@@ -107,13 +130,13 @@ function showEmbedBuilderAnilist(response) {
 
 function defaultEmbed() {
   const result = new MessageEmbed();
-  result.setDescription('Not found');
+  result.setDescription("Not found");
   return result;
 }
 
 function nullCheck(data) {
   if (data == null) {
-    return 'N/A';
+    return "N/A";
   } else {
     return data;
   }
@@ -121,56 +144,56 @@ function nullCheck(data) {
 
 function colorPicker(status) {
   switch (status) {
-    case ('currently_airing'): {
-      return '#22fc00';
+    case "currently_airing": {
+      return "#22fc00";
     }
 
-    case ('RELEASING'): {
-      return '#22fc00';
+    case "RELEASING": {
+      return "#22fc00";
     }
 
-    case ('finished_airing'): {
-      return '#2b00ff';
+    case "finished_airing": {
+      return "#2b00ff";
     }
 
-    case ('FINISHED'): {
-      return '#2b00ff';
+    case "FINISHED": {
+      return "#2b00ff";
     }
 
-    case ('not_yet_aired'): {
-      return '#ff1100';
+    case "not_yet_aired": {
+      return "#ff1100";
     }
 
-    case ('NOT_YET_RELEASED'): {
-      return '#ff1100';
+    case "NOT_YET_RELEASED": {
+      return "#ff1100";
     }
 
     default: {
-      return '#ffffff';
+      return "#ffffff";
     }
   }
 }
 
 function songList(songs) {
-  if (typeof songs === 'undefined') {
-    return 'N/A\n';
+  if (typeof songs === "undefined") {
+    return "N/A\n";
   } else {
-    let result = '';
+    let result = "";
     for (let i = 0; i < songs.length; i++) {
-      result += songs[i].text + '\n';
+      result += songs[i].text + "\n";
     }
     return result;
   }
 }
 
 function studioList(type, studios) {
-  if (type == 'mal') {
+  if (type == "mal") {
     if (studios.length == 0) {
-      return 'N/A';
+      return "N/A";
     }
     let studio = studios[0].name;
     for (let i = 1; i < studios.length; i++) {
-      studio += ', ' + studios[i].name;
+      studio += ", " + studios[i].name;
     }
     return studio;
   } else {
@@ -180,22 +203,22 @@ function studioList(type, studios) {
         studio.push(studios[i].name);
       }
     }
-    return studio.join(', ');
+    return studio.join(", ");
   }
 }
 
 function episodeCheck(data) {
   if (data == 0) {
-    return 'Unknown';
+    return "Unknown";
   } else {
     return data;
   }
 }
 
 function anilistRank(data) {
-  let rank = 'N/A';
+  let rank = "N/A";
   for (let i = 0; i < data.length; i++) {
-    if (data[i].allTime == true && data[i].type == 'RATED') {
+    if (data[i].allTime == true && data[i].type == "RATED") {
       rank = data[i].rank;
       break;
     }
@@ -205,85 +228,87 @@ function anilistRank(data) {
 
 function anilistText(input) {
   if (input == null) {
-    return 'N/A';
+    return "N/A";
   }
   if (input.length > 1800) {
     input = input.substring(0, 1950);
-    input += '...';
+    input += "...";
   }
   let start = 0;
   while (true) {
-    const temp = input.indexOf('~!');
+    const temp = input.indexOf("~!");
     if (temp == -1) {
       break;
     }
-    input = input.replace('~!', '||');
+    input = input.replace("~!", "||");
     start++;
   }
   let end = 0;
   while (true) {
-    const temp = input.indexOf('!~');
+    const temp = input.indexOf("!~");
     if (temp == -1) {
       break;
     }
-    input = input.replace('!~', '||');
+    input = input.replace("!~", "||");
     end++;
   }
   if (start > end) {
-    input += '||';
+    input += "||";
   }
   return input;
 }
 
 function characterMedia(input) {
-  let media = '**Media**\n';
+  let media = "**Media**\n";
   for (let i = 0; i < input.length; i++) {
-    media += `-[${input[i].title.romaji}${titleNull(input[i].title.english)}](${input[i].siteUrl})\n`;
+    media += `-[${input[i].title.romaji}${titleNull(input[i].title.english)}](${
+      input[i].siteUrl
+    })\n`;
   }
   return media;
 }
 
 function anilistDate(input) {
-  let date = '';
+  let date = "";
   if (input.month != null) {
     date += input.month;
   }
   if (input.day != null) {
-    date += '/' + input.day;
+    date += "/" + input.day;
   }
   if (input.year != null) {
-    date += '/' + input.year;
+    date += "/" + input.year;
   }
-  if (date == '') {
-    return '';
+  if (date == "") {
+    return "";
   }
   return `**DOB:** ${date}\n`;
 }
 
 function activeSince(input) {
   if (input.length == 0) {
-    return '';
+    return "";
   }
   return `**Active Since:** ${input[0]}\n`;
 }
 
 function age(input) {
   if (input == null) {
-    return '';
+    return "";
   }
   return `**Age:** ${input}\n`;
 }
 
 function homeTown(input) {
   if (input == null) {
-    return '';
+    return "";
   }
   return `**Home Town:** ${input}\n`;
 }
 
 function titleNull(input) {
   if (input == null) {
-    return '';
+    return "";
   }
   return ` (${input})`;
 }

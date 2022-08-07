@@ -1,11 +1,14 @@
-const {MessageActionRow, MessageButton} = require('discord.js');
+const { MessageActionRow, MessageButton } = require("discord.js");
 
 function boardCreate() {
   const board = [];
   for (let i = 0; i < 3; i++) {
     const row = new MessageActionRow();
     for (let j = 0; j < 3; j++) {
-      const button = new MessageButton().setCustomId((i * 3 + j).toString()).setStyle('SECONDARY').setLabel(' ');
+      const button = new MessageButton()
+        .setCustomId((i * 3 + j).toString())
+        .setStyle("SECONDARY")
+        .setLabel(" ");
       row.addComponents(button);
     }
     board.push(row);
@@ -14,24 +17,24 @@ function boardCreate() {
 }
 
 function updateBoard(id, board, turn) {
-  let mark = '❌';
+  let mark = "❌";
   if (!turn) {
-    mark = '⭕';
+    mark = "⭕";
   }
   const i = parseInt(id / 3);
   const j = id % 3;
   const button = board[i].components[j];
   button.label = null;
-  button.emoji = {id: undefined, name: mark, animated: undefined};
+  button.emoji = { id: undefined, name: mark, animated: undefined };
   button.disabled = true;
   board[i].components[j] = button;
   return board;
 }
 
 function checkWin(board, turn) {
-  let mark = 'x';
+  let mark = "x";
   if (!turn) {
-    mark = 'o';
+    mark = "o";
   }
   const boardArray = [];
   for (let i = 0; i < 3; i++) {
@@ -39,13 +42,13 @@ function checkWin(board, turn) {
     for (let j = 0; j < 3; j++) {
       let symbol = board[i].components[j].emoji;
       if (symbol == null) {
-        row.push('*');
+        row.push("*");
       } else {
         symbol = symbol.name;
-        if (symbol == '⭕') {
-          row.push('o');
+        if (symbol == "⭕") {
+          row.push("o");
         } else {
-          row.push('x');
+          row.push("x");
         }
       }
     }

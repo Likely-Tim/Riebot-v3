@@ -2,9 +2,9 @@
  * @module Spotify
  */
 
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
-const dbToken = require('../databaseHelpers/tokens.js');
+const dbToken = require("../databaseHelpers/tokens.js");
 
 const SPOTIFY_ID = process.env.SPOTIFY_ID;
 const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
@@ -16,11 +16,16 @@ const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
  */
 async function refreshToken() {
   const refreshToken = await dbToken.get("spotifyRefresh");
-  const url = 'https://accounts.spotify.com/api/token';
-  const data = {client_id: SPOTIFY_ID, client_secret: SPOTIFY_SECRET, grant_type: 'refresh_token', refresh_token: refreshToken};
+  const url = "https://accounts.spotify.com/api/token";
+  const data = {
+    client_id: SPOTIFY_ID,
+    client_secret: SPOTIFY_SECRET,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  };
   let response = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(data),
   });
   if (response.status != 200) {
@@ -28,7 +33,7 @@ async function refreshToken() {
   }
   response = await response.json();
   await dbToken.put("spotifyAccess", response.access_token);
-  console.log('Refreshed Spotify Creds');
+  console.log("Refreshed Spotify Creds");
   return true;
 }
 
@@ -41,11 +46,13 @@ async function refreshToken() {
  */
 async function search(type, query) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
-  const authorization = 'Bearer ' + accessToken;
+  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+    query
+  )}&type=${type}&limit=5`;
+  const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
-    method: 'GET',
-    headers: {Authorization: authorization},
+    method: "GET",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     return await response.json();
@@ -65,23 +72,23 @@ async function search(type, query) {
  */
 async function currentlyPlaying(uri) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const url = 'https://api.spotify.com/v1/me/player/currently-playing';
-  const authorization = 'Bearer ' + accessToken;
+  const url = "https://api.spotify.com/v1/me/player/currently-playing";
+  const authorization = "Bearer " + accessToken;
   let response = await fetch(url, {
-    method: 'GET',
-    headers: {Authorization: authorization},
+    method: "GET",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     response = await response.json();
-    if (response.currently_playing_type == 'ad') {
-      return 'Ad';
+    if (response.currently_playing_type == "ad") {
+      return "Ad";
     } else if (uri) {
       return response.item.uri;
     } else {
       return response.item.external_urls.spotify;
     }
   } else if (response.status == 204) {
-    return 'Nothing Playing';
+    return "Nothing Playing";
   } else if (response.status == 401) {
     await refreshToken();
     return await currentlyPlaying(uri);
@@ -98,15 +105,15 @@ async function currentlyPlaying(uri) {
  */
 async function playlistAddPlaying(playlistId) {
   const uri = await currentlyPlaying(true);
-  if (!uri.startsWith('spotify:track:')) {
+  if (!uri.startsWith("spotify:track:")) {
     return false;
   }
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=${uri}`;
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
-    method: 'POST',
-    headers: {Authorization: authorization},
+    method: "POST",
+    headers: { Authorization: authorization },
   });
   if (response.status == 201) {
     return true;
@@ -128,10 +135,10 @@ async function playlistAddPlaying(playlistId) {
 async function topPlayed(type, period) {
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
-    method: 'GET',
-    headers: {Authorization: authorization},
+    method: "GET",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     return await response.json();
@@ -152,10 +159,10 @@ async function topPlayed(type, period) {
 async function getPlaylist(playlistId) {
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/`;
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
-    method: 'GET',
-    headers: {Authorization: authorization},
+    method: "GET",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     return await response.json();
@@ -175,10 +182,10 @@ async function getPlaylist(playlistId) {
  */
 async function nextPage(url) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
-    method: 'GET',
-    headers: {Authorization: authorization},
+    method: "GET",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     return await response.json();
@@ -199,12 +206,12 @@ async function nextPage(url) {
  */
 async function createPlaylist(name, isPublic) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const authorization = 'Bearer ' + accessToken;
-  const url = 'https://api.spotify.com/v1/users/fhusion/playlists';
-  const data = {name, public: isPublic};
+  const authorization = "Bearer " + accessToken;
+  const url = "https://api.spotify.com/v1/users/fhusion/playlists";
+  const data = { name, public: isPublic };
   const response = await fetch(url, {
-    method: 'POST',
-    headers: {Authorization: authorization},
+    method: "POST",
+    headers: { Authorization: authorization },
     body: JSON.stringify(data),
   });
   if (response.status == 201) {
@@ -226,12 +233,12 @@ async function createPlaylist(name, isPublic) {
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
-  const data = {uris: uriArray};
+  const data = { uris: uriArray };
   const response = await fetch(url, {
-    method: 'POST',
-    headers: {Authorization: authorization},
+    method: "POST",
+    headers: { Authorization: authorization },
     body: JSON.stringify(data),
   });
   if (response.status == 201) {
@@ -252,11 +259,11 @@ async function addItemsToPlaylist(playlistId, uriArray) {
  */
 async function unfollowPlaylist(playlistId) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const authorization = 'Bearer ' + accessToken;
+  const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
   const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {Authorization: authorization},
+    method: "DELETE",
+    headers: { Authorization: authorization },
   });
   if (response.status == 200) {
     return true;
@@ -277,7 +284,7 @@ async function unfollowPlaylist(playlistId) {
 async function voiceTempPlaylist(playlist) {
   const tempPlaylistIds = [];
   let uriArray = [];
-  let tempPlaylist = await createPlaylist('Temp', false);
+  let tempPlaylist = await createPlaylist("Temp", false);
   let tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
   for (let i = 0; i < playlist.tracks.items.length; i++) {
@@ -289,7 +296,7 @@ async function voiceTempPlaylist(playlist) {
   await addItemsToPlaylist(tempPlaylistId, uriArray);
   uriArray = [];
   playlist = await nextPage(playlist.tracks.next);
-  tempPlaylist = await createPlaylist('Temp', false);
+  tempPlaylist = await createPlaylist("Temp", false);
   tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
   for (let i = 0; i < playlist.items.length; i++) {
@@ -302,7 +309,7 @@ async function voiceTempPlaylist(playlist) {
   while (playlist.next != null) {
     uriArray = [];
     playlist = await nextPage(playlist.next);
-    tempPlaylist = await createPlaylist('Temp', false);
+    tempPlaylist = await createPlaylist("Temp", false);
     tempPlaylistId = tempPlaylist.id;
     tempPlaylistIds.push(tempPlaylistId);
     for (let i = 0; i < playlist.items.length; i++) {

@@ -1,33 +1,34 @@
-const fs = require('fs');
-const {REST} = require('@discordjs/rest');
-const {Routes} = require('discord-api-types/v9');
+const fs = require("fs");
+const { REST } = require("@discordjs/rest");
+const { Routes } = require("discord-api-types/v9");
 
 const TOKEN = process.env.DISCORD_TOKEN;
 
 function refreshSlashCommands() {
   const commands = [];
-  const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
+  const commandFiles = fs
+    .readdirSync("./commands")
+    .filter((file) => file.endsWith(".js"));
 
-  const clientId = '876282017149505537';
-  const guildId = '746199520592920597';
+  const clientId = "876282017149505537";
+  const guildId = "746199520592920597";
 
   for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     commands.push(command.data.toJSON());
   }
 
-  const rest = new REST({version: '9'}).setToken(TOKEN);
+  const rest = new REST({ version: "9" }).setToken(TOKEN);
 
   (async () => {
     try {
-      console.log('Started refreshing application (/) commands.');
+      console.log("Started refreshing application (/) commands.");
 
-      await rest.put(
-          Routes.applicationGuildCommands(clientId, guildId),
-          {body: commands},
-      );
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        body: commands,
+      });
 
-      console.log('Successfully reloaded application (/) commands.');
+      console.log("Successfully reloaded application (/) commands.");
     } catch (error) {
       console.error(error);
     }
