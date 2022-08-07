@@ -1,3 +1,11 @@
+Fhusion#2855,spotify-playing,N/A
+Fhusion#2855,anime,show_odd
+Fhusion#2855,anime,show_odd
+Fhusion#2855,anime,show_kanojo
+Fhusion#2855,anime,show_odd taxi
+Fhusion#2855,anime,va_rie
+Fhusion#2855,anime,show_odd
+Fhusion#2855,anime,show_odd
 Fhusion#2855,anime,show_sao progressive
 Fhusion#2855,spotify-playing,N/A
 Fhusion#2855,spotify,Artist_aimer
