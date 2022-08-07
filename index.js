@@ -112,7 +112,7 @@ client.on('messageCreate', async (message) => {
 
 // client.on('debug', console.log);
 keepAlive();
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);
 
 // / ///////////////////////////////////////
 // / //////// HELPER FUNCTIONS /////////////

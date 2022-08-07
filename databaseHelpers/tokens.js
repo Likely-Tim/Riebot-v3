@@ -3,7 +3,7 @@ const { Level } = require('level');
 
 const db = new Level("./databases/tokens");
 
-const CRYPTO_PASSWORD = process.env.PASSWORD;
+const CRYPTO_PASSWORD = process.env.CRYPTO_PASSWORD;
 
 async function put(key, value) {
     const encrypted = CryptoJS.AES.encrypt(value, CRYPTO_PASSWORD).toString();

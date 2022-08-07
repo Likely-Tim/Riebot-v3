@@ -36,7 +36,6 @@ router.get('/spotify', async (request, response) => {
 });
 
 router.get('/mal', async (request, response) => {
-  console.log(request);
   try {
     originalState = await dbToken.get("malState");
     if (originalState != request.query.state) {

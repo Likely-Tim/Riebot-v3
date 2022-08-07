@@ -3,7 +3,7 @@ const Keyv = require('keyv');
 const {KeyvFile} = require('keyv-file');
 const CryptoJS = require('crypto-js');
 
-const PASSWORD = process.env.PASSWORD;
+const PASSWORD = process.env.CRYPTO_PASSWORD;
 
 const tokens = new Keyv({
   store: new KeyvFile({
