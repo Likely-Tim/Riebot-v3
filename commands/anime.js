@@ -1,11 +1,13 @@
 const Keyv = require("keyv");
-const { KeyvFile } = require("keyv-file");
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { InteractionCollector, MessageEmbed } = require("discord.js");
+const {KeyvFile} = require("keyv-file");
+const {SlashCommandBuilder} = require("@discordjs/builders");
+const {InteractionCollector, MessageEmbed} = require("discord.js");
 const embed = require("../helpers/embed.js");
 const anime = require("../helpers/anime.js");
 const youtube = require("../helpers/youtube.js");
 const button = require("../helpers/buttons.js");
+
+const dbAnime = require("../databaseHelpers/anime.js");
 
 // Databases
 const db = new Keyv({
@@ -24,67 +26,21 @@ const messages = new Keyv({
   }),
 });
 
-function showEmbedBuilderMal(response) {
-  return embed.showEmbedBuilderMal(response);
-}
-
-function showEmbedBuilderAnilist(response) {
-  const result = embed.showEmbedBuilderAnilist(response);
-  trailerSave(result[2]);
-  return result;
-}
-
-function trailerSave(data) {
+function trailerParse(data) {
   if (data == null) {
-    db.set("show_trailer", "None");
-    return false;
-  }
-  if (data.site == "youtube") {
-    db.set("show_trailer", "https://youtu.be/" + data.id);
+    return null;
+  } else if (data.site == "youtube") {
+    return "https://youtu.be/" + data.id;
   } else if (data.site == "dailymotion") {
-    db.set("show_trailer", "https://dai.ly/" + data.id);
+    return "https://dai.ly/" + data.id;
   }
-  return true;
 }
 
-function vaEmbedBuilder(response) {
-  db.set("va_name", response.name.full);
-  const result = new MessageEmbed();
-  if (response == null) {
-    result.setDescription("No voice actor found!");
-    return result;
-  }
-  result.setTitle(`${response.name.full} (${response.name.native})`);
-  result.setURL(response.siteUrl);
-  result.setThumbnail(response.image.large);
-  result.setDescription(
-    `${embed.age(response.age)}${embed.anilistDate(
-      response.dateOfBirth
-    )}${embed.activeSince(response.yearsActive)}${embed.homeTown(
-      response.homeTown
-    )}${embed.anilistText(response.description)}`
-  );
-  return result;
-}
-
-async function vaCharacterEmbedBuilder(input) {
-  const result = new MessageEmbed();
-  const character = await db.get("va_characters_" + input);
-  result.setTitle(character.node.name.full);
-  result.setURL(character.node.siteUrl);
-  result.setThumbnail(character.node.image.large);
-  result.setDescription(
-    `Role: ${character.role}\n\n${embed.anilistText(
-      character.node.description
-    )}\n\n${embed.characterMedia(character.media)}`
-  );
-  return result;
-}
-
-async function saveVaCharacters(response) {
-  db.set("va_characters", response.length);
-  for (let i = 0; i < response.length; i++) {
-    db.set("va_characters_" + i, response[i]);
+async function saveVaCharacters(characters) {
+  dbAnime.put("vaCharacterLength", characters.length);
+  for (let i = 0; i < characters.length; i++) {
+    const characterEmbed = embed.characterEmbed(characters[i]);
+    dbAnime.putEmbed("vaCharacter" + i, characterEmbed);
   }
 }
 
@@ -95,7 +51,7 @@ async function disablePrevious(client, newMessage, prefix) {
     const oldMessageId = await messages.get(`anime-${prefix}_message_id`);
     const oldMessage = await channel.messages.fetch(oldMessageId);
     const buttons = button.disableAllButtons(oldMessage.components);
-    oldMessage.edit({ components: buttons });
+    oldMessage.edit({components: buttons});
   } catch (error) {
     console.log(`[Anime-${prefix}] Could not find previous message.`);
   } finally {
@@ -118,9 +74,7 @@ module.exports = {
           ["va", "va"],
         ])
     )
-    .addStringOption((option) =>
-      option.setName("query").setDescription("What to search").setRequired(true)
-    ),
+    .addStringOption((option) => option.setName("query").setDescription("What to search").setRequired(true)),
 
   async execute(client, interaction) {
     const type = interaction.options.getString("type");
@@ -128,51 +82,50 @@ module.exports = {
 
     switch (type) {
       case "show": {
-        db.set("youtube_search", "");
-        let response = await anime.anilistShow(query);
-        // Anilist found show
-        if (response != "No show found!") {
-          const result = showEmbedBuilderAnilist(response);
-          const anilistEmbed = result[0];
-          db.set("anilistShow_embed", anilistEmbed);
-          response = await anime.malSearchId(result[1]);
-          const embed = showEmbedBuilderMal(response);
-          db.set("mal_show_embed", embed[0]);
-          const components = [];
-          const select = button.addSelect(embed[1].split("\n"));
-          if (select != undefined) {
-            components.push(select);
-            if (result[2]) {
-              const url = await db.get("show_trailer");
-              components.push(
-                button.merge(["search", "anilist", button.linkButton(url)])
-              );
-            } else {
-              components.push(button.merge(["search", "anilist"]));
+        const anilistResponse = await anime.anilistShow(query);
+        // Anilist Show Found
+        if (anilistResponse != null) {
+          const anilistShowEmbed = embed.showEmbedBuilderAnilist(anilistResponse);
+          dbAnime.putEmbed("anilistShowEmbed", anilistShowEmbed);
+          const trailer = trailerParse(anilistResponse.trailer);
+          // No corresponding MAL Entry
+          if (!anilistResponse.idMal) {
+            const components = [];
+            if (trailer) {
+              components.push(button.linkButton(trailer));
             }
+            await interaction.reply({embeds: [anilistShowEmbed], components: components});
           } else {
-            if (result[2]) {
-              const url = await db.get("show_trailer");
-              components.push(
-                button.merge(["anilist", button.linkButton(url)])
-              );
-            } else {
-              components.push(button.merge(["anilist"]));
+            const malResponse = await anime.malShowId(anilistResponse.idMal);
+            const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
+            dbAnime.putEmbed("malShowEmbed", malShowEmbed);
+            const songList = malShowEmbed.fields[0].value + malShowEmbed.fields[1].value;
+            const select = button.addSelect(songList.split("\n"));
+            let components = ["anilist"];
+            if (trailer) {
+              components.push(button.linkButton(trailer));
             }
+            if (select) {
+              components.unshift("search");
+              components = [button.merge(components)];
+              components.unshift(select);
+            } else {
+              components = [button.merge(components)];
+            }
+            await interaction.reply({embeds: [malShowEmbed], components: components});
           }
-          await interaction.reply({ embeds: [embed[0]], components });
-
-          // Anilist search fails
+          // Anilist Search Fail
         } else {
-          response = await anime.malSearch(query);
-          const embed = showEmbedBuilderMal(response);
+          const malResponse = await anime.malShow(query);
+          const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
+          const songList = malShowEmbed.fields[0].value + malShowEmbed.fields[1].value;
+          const select = button.addSelect(songList.split("\n"));
           const components = [];
-          const select = button.addSelect(embed[1].split("\n"));
-          if (select != undefined) {
+          if (select) {
             components.push(select);
             components.push(button.merge(["search"]));
           }
-          await interaction.reply({ embeds: [embed[0]], components });
+          await interaction.reply({embeds: [malShowEmbed], components: components});
         }
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
@@ -182,17 +135,14 @@ module.exports = {
 
       case "va": {
         const response = await anime.anilistVa(query);
-        if (response == null) {
-          const embed = new MessageEmbed().setDescription("No va found");
-          await interaction.reply({ embeds: [embed] });
+        saveVaCharacters(response.characters.edges);
+        const vaEmbed = embed.vaEmbedBuilder(response);
+        dbAnime.putEmbed("vaEmbed", vaEmbed);
+        dbAnime.put("vaName", response.name.full);
+        if (vaEmbed.title) {
+          await interaction.reply({embeds: [vaEmbed], components: [button.actionRow(["characters"])]});
         } else {
-          saveVaCharacters(response.characters.edges);
-          const embed = vaEmbedBuilder(response);
-          db.set("current_va", embed);
-          await interaction.reply({
-            embeds: [embed],
-            components: [button.actionRow(["characters"])],
-          });
+          await interaction.reply({embeds: [vaEmbed], components: []});
         }
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
@@ -204,69 +154,59 @@ module.exports = {
 };
 
 function animeShowButtonInteraction(client, message) {
-  const collector = new InteractionCollector(client, { message });
+  const collector = new InteractionCollector(client, {message});
   collector.on("collect", async (press) => {
     if (press.isButton()) {
       const components = press.message.components;
       if (press.customId == "anilist") {
-        const embed = await db.get("anilistShow_embed");
+        const anilistEmbed = await dbAnime.getEmbed("anilistShowEmbed");
         if (components[1] == undefined) {
           components[0] = button.replace(components[0], "anilist", "mal");
         } else {
           components[1] = button.replace(components[1], "anilist", "mal");
         }
-        await press.update({ embeds: [embed], components });
+        await press.update({embeds: [anilistEmbed], components});
       } else if (press.customId == "mal") {
-        const embed = await db.get("mal_show_embed");
+        const malEmbed = await dbAnime.getEmbed("malShowEmbed");
         if (components[1] == undefined) {
           components[0] = button.replace(components[0], "mal", "anilist");
         } else {
           components[1] = button.replace(components[1], "mal", "anilist");
         }
-        await press.update({ embeds: [embed], components });
+        await press.update({embeds: [malEmbed], components});
       } else if (press.customId == "search") {
-        const query = await db.get("youtube_search");
-        if (query == "") {
+        const selectQuery = await dbAnime.get("showSelectQuery");
+        if (selectQuery == "") {
           press.reply({
             ephemeral: true,
             content: "Select from the drop down menu!",
           });
         } else {
-          const response = await youtube.search(query);
+          const response = await youtube.search(selectQuery);
           press.reply(response);
         }
       }
     } else if (press.isSelectMenu()) {
       const value = press.values[0];
+      await dbAnime.put("showSelectQuery", value);
       const components = press.message.components;
       button.setDefault(components[0].components[0], value);
-      db.set("youtube_search", value);
-      press.update({ components });
+      press.update({components});
     }
   });
 }
 
 function animeVAButtonInteraction(client, message) {
-  const collector = new InteractionCollector(client, {
-    message,
-    componentType: "BUTTON",
-  });
+  const collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
   collector.on("collect", async (press) => {
-    const name = await db.get("va_name");
-    const vaButton = button.returnButton("va");
-    vaButton.setLabel(name);
-    const value = await db.get("va_characters");
+    const name = await dbAnime.get("vaName");
+    const vaButton = button.changeLabel(button.returnButton("va"), name);
+    const vaCharacterLength = parseInt(await dbAnime.get("vaCharacterLength"));
     if (press.customId == "characters") {
-      const name = await db.get("va_name");
-      const vaButton = button.changeLabel(button.returnButton("va"), name);
-      const characterEmbed = await vaCharacterEmbedBuilder(0);
-      db.set("vaCharacters_counter", 0);
-      if (value == 1) {
-        const components = button.merge([
-          "disabled_prev",
-          "disabled_next",
-          vaButton,
-        ]);
+      const characterEmbed = await dbAnime.getEmbed("vaCharacter0");
+      dbAnime.put("vaCharactersIndex", 0);
+      if (vaCharacterLength == 1) {
+        const components = button.merge(["disabled_prev", "disabled_next", vaButton]);
         await press.update({
           embeds: [characterEmbed],
           components: [components],
@@ -279,13 +219,11 @@ function animeVAButtonInteraction(client, message) {
         });
       }
     } else if (press.customId == "next") {
-      const name = await db.get("va_name");
-      const vaButton = button.changeLabel(button.returnButton("va"), name);
-      let counter = await db.get("vaCharacters_counter");
-      counter += 1;
-      db.set("vaCharacters_counter", counter);
-      const characterEmbed = await vaCharacterEmbedBuilder(counter);
-      if (value - counter != 1) {
+      let index = parseInt(await dbAnime.get("vaCharactersIndex"));
+      index += 1;
+      await dbAnime.put("vaCharactersIndex", index);
+      const characterEmbed = await dbAnime.getEmbed("vaCharacter" + index);
+      if (vaCharacterLength - index != 1) {
         const components = button.merge(["prev", "next", vaButton]);
         await press.update({
           embeds: [characterEmbed],
@@ -299,13 +237,11 @@ function animeVAButtonInteraction(client, message) {
         });
       }
     } else if (press.customId == "prev") {
-      const name = await db.get("va_name");
-      const vaButton = button.changeLabel(button.returnButton("va"), name);
-      let counter = await db.get("vaCharacters_counter");
-      counter -= 1;
-      db.set("vaCharacters_counter", counter);
-      const characterEmbed = await vaCharacterEmbedBuilder(counter);
-      if (counter == 0) {
+      let index = parseInt(await dbAnime.get("vaCharactersIndex"));
+      index -= 1;
+      await dbAnime.put("vaCharactersIndex", index);
+      const characterEmbed = await dbAnime.getEmbed("vaCharacter" + index);
+      if (index == 0) {
         const components = button.merge(["disabled_prev", "next", vaButton]);
         await press.update({
           embeds: [characterEmbed],
@@ -319,9 +255,9 @@ function animeVAButtonInteraction(client, message) {
         });
       }
     } else if (press.customId == "va") {
-      const embed = await db.get("current_va");
+      const vaEmbed = await dbAnime.getEmbed("vaEmbed");
       await press.update({
-        embeds: [embed],
+        embeds: [vaEmbed],
         components: [button.actionRow(["characters"])],
       });
     }

@@ -1,70 +1,19 @@
-const {
-  MessageActionRow,
-  MessageButton,
-  MessageSelectMenu,
-} = require("discord.js");
+const {MessageActionRow, MessageButton, MessageSelectMenu} = require("discord.js");
 
-const nextButton = new MessageButton()
-  .setCustomId("next")
-  .setStyle("SECONDARY")
-  .setEmoji("➡️");
-const prevButton = new MessageButton()
-  .setCustomId("prev")
-  .setStyle("SECONDARY")
-  .setEmoji("⬅️");
-const checkButton = new MessageButton()
-  .setCustomId("save")
-  .setStyle("SECONDARY")
-  .setEmoji("✅");
-const refreshButton = new MessageButton()
-  .setCustomId("refresh")
-  .setStyle("SECONDARY")
-  .setEmoji("🔄");
-const searchButton = new MessageButton()
-  .setCustomId("search")
-  .setStyle("PRIMARY")
-  .setLabel("Search");
-const anilistButton = new MessageButton()
-  .setCustomId("anilist")
-  .setLabel("Anilist")
-  .setStyle("PRIMARY");
-const malButton = new MessageButton()
-  .setCustomId("mal")
-  .setLabel("MAL")
-  .setStyle("PRIMARY");
-const characterButton = new MessageButton()
-  .setCustomId("characters")
-  .setLabel("Characters")
-  .setStyle("PRIMARY");
-const vaButton = new MessageButton()
-  .setCustomId("va")
-  .setLabel("temp")
-  .setStyle("SECONDARY");
-const disabledNextButton = new MessageButton()
-  .setCustomId("disabled_next")
-  .setStyle("SECONDARY")
-  .setEmoji("➡️")
-  .setDisabled(true);
-const disabledPrevButton = new MessageButton()
-  .setCustomId("disabled_prev")
-  .setStyle("SECONDARY")
-  .setEmoji("⬅️")
-  .setDisabled(true);
-const disabledCheckButton = new MessageButton()
-  .setCustomId("disabled_save")
-  .setStyle("SECONDARY")
-  .setEmoji("✅")
-  .setDisabled(true);
-const disabledRefreshButton = new MessageButton()
-  .setCustomId("disabled_refresh")
-  .setStyle("SECONDARY")
-  .setEmoji("🔄")
-  .setDisabled(true);
-const disabledSearchButton = new MessageButton()
-  .setCustomId("disabled_search")
-  .setStyle("PRIMARY")
-  .setLabel("Search")
-  .setDisabled(true);
+const nextButton = new MessageButton().setCustomId("next").setStyle("SECONDARY").setEmoji("➡️");
+const prevButton = new MessageButton().setCustomId("prev").setStyle("SECONDARY").setEmoji("⬅️");
+const checkButton = new MessageButton().setCustomId("save").setStyle("SECONDARY").setEmoji("✅");
+const refreshButton = new MessageButton().setCustomId("refresh").setStyle("SECONDARY").setEmoji("🔄");
+const searchButton = new MessageButton().setCustomId("search").setStyle("PRIMARY").setLabel("Search");
+const anilistButton = new MessageButton().setCustomId("anilist").setLabel("Anilist").setStyle("PRIMARY");
+const malButton = new MessageButton().setCustomId("mal").setLabel("MAL").setStyle("PRIMARY");
+const characterButton = new MessageButton().setCustomId("characters").setLabel("Characters").setStyle("PRIMARY");
+const vaButton = new MessageButton().setCustomId("va").setLabel("temp").setStyle("SECONDARY");
+const disabledNextButton = new MessageButton().setCustomId("disabled_next").setStyle("SECONDARY").setEmoji("➡️").setDisabled(true);
+const disabledPrevButton = new MessageButton().setCustomId("disabled_prev").setStyle("SECONDARY").setEmoji("⬅️").setDisabled(true);
+const disabledCheckButton = new MessageButton().setCustomId("disabled_save").setStyle("SECONDARY").setEmoji("✅").setDisabled(true);
+const disabledRefreshButton = new MessageButton().setCustomId("disabled_refresh").setStyle("SECONDARY").setEmoji("🔄").setDisabled(true);
+const disabledSearchButton = new MessageButton().setCustomId("disabled_search").setStyle("PRIMARY").setLabel("Search").setDisabled(true);
 
 const buttons = {};
 buttons.prev = prevButton;
@@ -126,18 +75,13 @@ function returnButton(input) {
 }
 
 function linkButton(url) {
-  const button = new MessageButton()
-    .setLabel("Trailer")
-    .setStyle("LINK")
-    .setURL(url);
+  const button = new MessageButton().setLabel("Trailer").setStyle("LINK").setURL(url);
   return button;
 }
 
 function addSelect(options) {
   const row = new MessageActionRow();
-  const select = new MessageSelectMenu()
-    .setCustomId("select")
-    .setPlaceholder("Nothing selected");
+  const select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
   const optionObject = [];
   options = sanitizeInput(options);
   if (options == undefined) {
@@ -167,10 +111,7 @@ function sanitizeInput(options) {
         continue;
       }
       option = option.replace(/#[A-Z]*[0-9]*: /, "");
-      option = option.replace(
-        /\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/,
-        ""
-      );
+      option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, "");
       options[i] = option;
     }
     for (let i = 0; i < removeIndex.length; i++) {

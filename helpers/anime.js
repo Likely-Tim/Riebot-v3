@@ -21,7 +21,7 @@ async function malRefreshToken() {
   };
   let response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
     body: new URLSearchParams(data),
   });
   response = await response.json();
@@ -29,14 +29,14 @@ async function malRefreshToken() {
   await dbToken.put("malRefresh", response.refresh_token);
 }
 
-async function malSearch(query) {
+async function malShow(query) {
   query = queryCreate(query.split(" "));
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
   const accessToken = await dbToken.get("malAccess");
   const authorization = "Bearer " + accessToken;
   let response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 400) {
     return "No show found!";
@@ -47,21 +47,21 @@ async function malSearch(query) {
   }
   response = await response.json();
   const id = response.data[0].node.id;
-  url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,openingThemes,endingThemes,mean,studio,status,num_episodes,rank,studios`;
+  url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
   response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   return response.json();
 }
 
-async function malSearchId(id) {
-  const url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,openingThemes,endingThemes,mean,studio,status,num_episodes,rank,studios`;
+async function malShowId(id) {
+  const url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
   const accessToken = await dbToken.get("malAccess");
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 401) {
     await malRefreshToken();
@@ -180,15 +180,10 @@ async function anilistShow(query) {
     }),
   });
   response = await response.json();
-  response = response.data.Media;
-  if (response == null) {
-    return "No show found!";
-  } else {
-    return response;
-  }
+  return response.data.Media;
 }
 
 module.exports.anilistVa = anilistVa;
 module.exports.anilistShow = anilistShow;
-module.exports.malSearch = malSearch;
-module.exports.malSearchId = malSearchId;
+module.exports.malShow = malShow;
+module.exports.malShowId = malShowId;

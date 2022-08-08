@@ -1,7 +1,6 @@
-const { MessageEmbed } = require("discord.js");
+const {MessageEmbed} = require("discord.js");
 
-const MAL_LOGO =
-  "https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ";
+const MAL_LOGO = "https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ";
 const ANI_LOGO = "https://anilist.co/img/icons/android-chrome-512x512.png";
 
 function basicEmbedBuilder(string) {
@@ -66,9 +65,8 @@ function showEmbedBuilderMal(response) {
   });
   result.setDescription(response.synopsis);
   result.setThumbnail(response.main_picture.large);
-  let openingThemes = songList(response.openingThemes);
-  let endingThemes = songList(response.endingThemes);
-  const songs = openingThemes + endingThemes;
+  let openingThemes = songList(response.opening_themes);
+  let endingThemes = songList(response.ending_themes);
   if (openingThemes.length > 1024) {
     openingThemes = openingThemes.substring(0, 1020) + "...";
   }
@@ -76,9 +74,9 @@ function showEmbedBuilderMal(response) {
     endingThemes = endingThemes.substring(0, 1020) + "...";
   }
   result.addFields(
-    { name: ":notes: Opening Themes", value: openingThemes, inline: true },
-    { name: ":notes: Ending Themes", value: endingThemes, inline: true },
-    { name: "\u200B", value: "\u200B" },
+    {name: ":notes: Opening Themes", value: openingThemes, inline: true},
+    {name: ":notes: Ending Themes", value: endingThemes, inline: true},
+    {name: "\u200B", value: "\u200B"},
     {
       name: ":trophy: Rank",
       value: `➤ ${nullCheck(response.rank)}`,
@@ -96,7 +94,7 @@ function showEmbedBuilderMal(response) {
     }
   );
   result.setColor(colorPicker(response.status));
-  return [result, songs];
+  return result;
 }
 
 function showEmbedBuilderAnilist(response) {
@@ -115,17 +113,17 @@ function showEmbedBuilderAnilist(response) {
   result.setThumbnail(response.coverImage.extraLarge);
   const rank = anilistRank(response.rankings);
   result.addFields(
-    { name: "\u200B", value: "\u200B" },
-    { name: ":trophy: Rank", value: `➤ ${rank}`, inline: true },
+    {name: "\u200B", value: "\u200B"},
+    {name: ":trophy: Rank", value: `➤ ${rank}`, inline: true},
     {
       name: ":alarm_clock: Episodes",
       value: `➤ ${response.episodes}`,
       inline: true,
     },
-    { name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true }
+    {name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true}
   );
   result.setColor(colorPicker(response.status));
-  return [result, response.idMal, response.trailer];
+  return result;
 }
 
 function defaultEmbed() {
@@ -261,9 +259,7 @@ function anilistText(input) {
 function characterMedia(input) {
   let media = "**Media**\n";
   for (let i = 0; i < input.length; i++) {
-    media += `-[${input[i].title.romaji}${titleNull(input[i].title.english)}](${
-      input[i].siteUrl
-    })\n`;
+    media += `-[${input[i].title.romaji}${titleNull(input[i].title.english)}](${input[i].siteUrl})\n`;
   }
   return media;
 }
@@ -313,21 +309,33 @@ function titleNull(input) {
   return ` (${input})`;
 }
 
-module.exports.nullCheck = nullCheck;
-module.exports.colorPicker = colorPicker;
-module.exports.songList = songList;
-module.exports.studioList = studioList;
-module.exports.episodeCheck = episodeCheck;
-module.exports.anilistRank = anilistRank;
-module.exports.anilistText = anilistText;
-module.exports.characterMedia = characterMedia;
-module.exports.anilistDate = anilistDate;
-module.exports.activeSince = activeSince;
-module.exports.age = age;
-module.exports.homeTown = homeTown;
+function vaEmbedBuilder(response) {
+  const result = new MessageEmbed();
+  if (response == null) {
+    result.setDescription("No voice actor found!");
+    return result;
+  }
+  result.setTitle(`${response.name.full} (${response.name.native})`);
+  result.setURL(response.siteUrl);
+  result.setThumbnail(response.image.large);
+  result.setDescription(`${age(response.age)}${anilistDate(response.dateOfBirth)}${activeSince(response.yearsActive)}${homeTown(response.homeTown)}${anilistText(response.description)}`);
+  return result;
+}
+
+function characterEmbed(character) {
+  const characterEmbed = new MessageEmbed();
+  characterEmbed.setTitle(character.node.name.full);
+  characterEmbed.setURL(character.node.siteUrl);
+  characterEmbed.setThumbnail(character.node.image.large);
+  characterEmbed.setDescription(`Role: ${character.role}\n\n${anilistText(character.node.description)}\n\n${characterMedia(character.media)}`);
+  return characterEmbed;
+}
+
 module.exports.defaultEmbed = defaultEmbed;
 module.exports.showEmbedBuilderMal = showEmbedBuilderMal;
 module.exports.showEmbedBuilderAnilist = showEmbedBuilderAnilist;
 module.exports.songQueueEmbedBuilder = songQueueEmbedBuilder;
 module.exports.songCurrentSongEmbedBuilder = songCurrentSongEmbedBuilder;
 module.exports.basicEmbedBuilder = basicEmbedBuilder;
+module.exports.vaEmbedBuilder = vaEmbedBuilder;
+module.exports.characterEmbed = characterEmbed;
