@@ -3,6 +3,12 @@ const {MessageEmbed} = require("discord.js");
 const MAL_LOGO = "https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ";
 const ANI_LOGO = "https://anilist.co/img/icons/android-chrome-512x512.png";
 
+function defaultEmbed() {
+  const result = new MessageEmbed();
+  result.setDescription("Not found");
+  return result;
+}
+
 function basicEmbedBuilder(string) {
   const result = new MessageEmbed();
   result.setDescription(string);
@@ -34,66 +40,60 @@ function songQueueEmbedBuilder(response) {
   return result;
 }
 
-function songQueueDescription(response) {
-  let result = "";
-  for (let i = 0; i < response.length; i++) {
-    const entry = `${i + 1}. [${response[i].name}](${response[i].url})\n`;
-    if (result.length + entry.length >= 4050) {
-      result += `${response.length - i} more songs...`;
-      break;
-    } else {
-      result += entry;
-    }
+function vaEmbedBuilder(response) {
+  if (response == null) {
+    return basicEmbedBuilder("No voice actor found.");
   }
+  const result = new MessageEmbed();
+  result.setTitle(`${response.name.full} (${response.name.native})`);
+  result.setURL(response.siteUrl);
+  result.setThumbnail(response.image.large);
+  result.setDescription(`${age(response.age)}${anilistDate(response.dateOfBirth)}${activeSince(response.yearsActive)}${homeTown(response.homeTown)}${anilistText(response.description)}`);
   return result;
 }
 
-function showEmbedBuilderMal(response) {
+function characterEmbed(character) {
+  const characterEmbed = new MessageEmbed();
+  characterEmbed.setTitle(character.node.name.full);
+  characterEmbed.setURL(character.node.siteUrl);
+  characterEmbed.setThumbnail(character.node.image.large);
+  characterEmbed.setDescription(`Role: ${character.role}\n\n${anilistText(character.node.description)}\n\n${characterMedia(character.media)}`);
+  return characterEmbed;
+}
+
+function showEmbedBuilderMal(malResponse) {
   const result = new MessageEmbed();
-  if (response == "No show found!") {
-    return result.setDescription(response);
+  if (!malResponse) {
+    return result.setDescription(malResponse);
   }
-  if (response.error != undefined) {
-    return [defaultEmbed(), ""];
-  }
-  result.setTitle(response.title);
-  const link = "https://myanimelist.net/anime/" + response.id;
+  result.setTitle(malResponse.title);
+  const link = "https://myanimelist.net/anime/" + malResponse.id;
   result.setURL(link);
   result.setAuthor({
-    name: studioList("mal", response.studios),
+    name: studioList("mal", malResponse.studios),
     iconURL: MAL_LOGO,
   });
-  result.setDescription(response.synopsis);
-  result.setThumbnail(response.main_picture.large);
-  let openingThemes = songList(response.opening_themes);
-  let endingThemes = songList(response.ending_themes);
-  if (openingThemes.length > 1024) {
-    openingThemes = openingThemes.substring(0, 1020) + "...";
-  }
-  if (endingThemes.length > 1024) {
-    endingThemes = endingThemes.substring(0, 1020) + "...";
-  }
+  result.setDescription(malResponse.synopsis);
+  result.setThumbnail(malResponse.main_picture.large);
   result.addFields(
-    {name: ":notes: Opening Themes", value: openingThemes, inline: true},
-    {name: ":notes: Ending Themes", value: endingThemes, inline: true},
     {name: "\u200B", value: "\u200B"},
     {
       name: ":trophy: Rank",
-      value: `➤ ${nullCheck(response.rank)}`,
+      value: `➤ ${nullCheck(malResponse.rank)}`,
       inline: true,
     },
     {
       name: ":alarm_clock: Episodes",
-      value: `➤ ${episodeCheck(response.num_episodes)}`,
+      value: `➤ ${episodeCheck(malResponse.num_episodes)}`,
       inline: true,
     },
     {
       name: ":100: Rating",
-      value: `➤ ${nullCheck(response.mean)}`,
+      value: `➤ ${nullCheck(malResponse.mean)}`,
       inline: true,
     }
   );
-  result.setColor(colorPicker(response.status));
+  result.setColor(colorPicker(malResponse.status));
   return result;
 }
 
@@ -126,9 +126,35 @@ function showEmbedBuilderAnilist(response) {
   return result;
 }
 
-function defaultEmbed() {
-  const result = new MessageEmbed();
-  result.setDescription("Not found");
+function opEdEmbedsBuilder(anithemeResponse) {
+  if (!anithemeResponse) {
+    return null;
+  }
+  let [openingThemes, endingThemes] = getSongList("anitheme", anithemeResponse);
+  openingThemes = openingThemes.join("\n");
+  endingThemes = endingThemes.join("\n");
+  const openingEmbed = new MessageEmbed();
+  openingEmbed.setTitle(anithemeResponse.anime[0].name + " Openings");
+  openingEmbed.setURL(anithemeResponse.anime[0].resources[0].link);
+  openingEmbed.setDescription(openingThemes);
+  const endingEmbed = new MessageEmbed();
+  endingEmbed.setTitle(anithemeResponse.anime[0].name + " Endings");
+  endingEmbed.setURL(anithemeResponse.anime[0].resources[0].link);
+  endingEmbed.setDescription(endingThemes);
+  return [openingEmbed, endingEmbed];
+}
+
+function songQueueDescription(response) {
+  let result = "";
+  for (let i = 0; i < response.length; i++) {
+    const entry = `${i + 1}. [${response[i].name}](${response[i].url})\n`;
+    if (result.length + entry.length >= 4050) {
+      result += `${response.length - i} more songs...`;
+      break;
+    } else {
+      result += entry;
+    }
+  }
   return result;
 }
 
@@ -142,26 +168,17 @@ function nullCheck(data) {
 
 function colorPicker(status) {
   switch (status) {
-    case "currently_airing": {
-      return "#22fc00";
-    }
-
+    case "currently_airing":
     case "RELEASING": {
       return "#22fc00";
     }
 
-    case "finished_airing": {
-      return "#2b00ff";
-    }
-
+    case "finished_airing":
     case "FINISHED": {
       return "#2b00ff";
     }
 
-    case "not_yet_aired": {
-      return "#ff1100";
-    }
-
+    case "not_yet_aired":
     case "NOT_YET_RELEASED": {
       return "#ff1100";
     }
@@ -172,36 +189,80 @@ function colorPicker(status) {
   }
 }
 
-function songList(songs) {
-  if (typeof songs === "undefined") {
-    return "N/A\n";
-  } else {
-    let result = "";
-    for (let i = 0; i < songs.length; i++) {
-      result += songs[i].text + "\n";
+function getSongList(type, songs) {
+  if (type == "mal") {
+    if (!songs) {
+      return ["N/A"];
     }
-    return result;
+    let songList = [];
+    for (let i = 0; i < songs.length; i++) {
+      songList.push(songs[i].text);
+    }
+    return songList;
+  } else if (type == "anitheme") {
+    if (songs.anime.length == 0 || songs.anime.length > 1) {
+      return [["N/A"], ["N/A"]];
+    }
+    const animeThemes = songs.anime[0].animethemes;
+    const openingThemes = [];
+    const endingThemes = [];
+    for (let i = 0; i < animeThemes.length; i++) {
+      let artists = [];
+      for (let j = 0; j < animeThemes[i].song.artists.length; j++) {
+        artists.push(animeThemes[i].song.artists[j].name);
+      }
+      artists = arrayJoin(artists);
+      const episodes = animeThemes[i].animethemeentries[0].episodes;
+      let link = "";
+      try {
+        link = animeThemes[i].animethemeentries[0].videos[0].link;
+      } catch {}
+      let animeTheme = animeThemes[i].song.title;
+      if (artists) {
+        animeTheme += ` by ${artists}`;
+      }
+      animeTheme += ` [EP: ${episodes}]`;
+      if (link) {
+        animeTheme = `[${animeTheme}](${link})`;
+      }
+      if (animeThemes[i].type == "OP") {
+        openingThemes.push(animeTheme);
+      } else if (animeThemes[i].type == "ED") {
+        endingThemes.push(animeTheme);
+      }
+    }
+    return [openingThemes, endingThemes];
   }
 }
 
+function arrayJoin(array) {
+  if (array.length == 0) {
+    return "";
+  } else if (array.length == 1) {
+    return array[0];
+  } else if (array.length == 2) {
+    return array[0] + " and " + array[1];
+  } else {
+    let string = array.join(", ");
+    const index = string.lastIndexOf(",");
+    return string.slice(0, index + 1) + " and" + string.slice(index + 1);
+  }
+}
 function studioList(type, studios) {
   if (type == "mal") {
-    if (studios.length == 0) {
-      return "N/A";
+    const studioList = [];
+    for (let i = 0; i < studios.length; i++) {
+      studioList.push(studios[i].name);
     }
-    let studio = studios[0].name;
-    for (let i = 1; i < studios.length; i++) {
-      studio += ", " + studios[i].name;
-    }
-    return studio;
+    return studioList.join(", ");
   } else {
-    const studio = [];
+    const studioList = [];
     for (let i = 0; i < studios.length; i++) {
       if (studios[i].isAnimationStudio == true) {
-        studio.push(studios[i].name);
+        studioList.push(studios[i].name);
       }
     }
-    return studio.join(", ");
+    return studioList.join(", ");
   }
 }
 
@@ -309,28 +370,6 @@ function titleNull(input) {
   return ` (${input})`;
 }
 
-function vaEmbedBuilder(response) {
-  const result = new MessageEmbed();
-  if (response == null) {
-    result.setDescription("No voice actor found!");
-    return result;
-  }
-  result.setTitle(`${response.name.full} (${response.name.native})`);
-  result.setURL(response.siteUrl);
-  result.setThumbnail(response.image.large);
-  result.setDescription(`${age(response.age)}${anilistDate(response.dateOfBirth)}${activeSince(response.yearsActive)}${homeTown(response.homeTown)}${anilistText(response.description)}`);
-  return result;
-}
-
-function characterEmbed(character) {
-  const characterEmbed = new MessageEmbed();
-  characterEmbed.setTitle(character.node.name.full);
-  characterEmbed.setURL(character.node.siteUrl);
-  characterEmbed.setThumbnail(character.node.image.large);
-  characterEmbed.setDescription(`Role: ${character.role}\n\n${anilistText(character.node.description)}\n\n${characterMedia(character.media)}`);
-  return characterEmbed;
-}
-
 module.exports.defaultEmbed = defaultEmbed;
 module.exports.showEmbedBuilderMal = showEmbedBuilderMal;
 module.exports.showEmbedBuilderAnilist = showEmbedBuilderAnilist;
@@ -339,3 +378,4 @@ module.exports.songCurrentSongEmbedBuilder = songCurrentSongEmbedBuilder;
 module.exports.basicEmbedBuilder = basicEmbedBuilder;
 module.exports.vaEmbedBuilder = vaEmbedBuilder;
 module.exports.characterEmbed = characterEmbed;
+module.exports.opEdEmbedsBuilder = opEdEmbedsBuilder;

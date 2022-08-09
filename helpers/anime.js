@@ -63,11 +63,16 @@ async function malShowId(id) {
     method: "GET",
     headers: {Authorization: authorization},
   });
-  if (response.status == 401) {
+  if (response.status == 200) {
+    return await response.json();
+  } else if (response.status == 401) {
     await malRefreshToken();
-    return await malSearchId(id);
+    return await malShowId(id);
+  } else if (response.status == 404) {
+    return null;
+  } else {
+    throw new Error(`Status: ${response.status}`);
   }
-  return response.json();
 }
 
 async function anilistVa(query) {
@@ -183,7 +188,23 @@ async function anilistShow(query) {
   return response.data.Media;
 }
 
+async function anithemeSearchMalId(malId) {
+  const url = `https://api.animethemes.moe/anime?&include=resources,animethemes.song.artists,animethemes.animethemeentries.videos&fields[anime]=name&fields[animetheme]=type&fields[song]=title&fields[artist]=name&fields[animethemeentry]=episodes&fields[video]=link&filter[has]=resources&filter[site]=MyAnimeList&filter[external_id]=${malId}`;
+  let response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  if (response.status == 200) {
+    return await response.json();
+  } else {
+    throw new Error(`Status: ${response.status}`);
+  }
+}
+
 module.exports.anilistVa = anilistVa;
 module.exports.anilistShow = anilistShow;
 module.exports.malShow = malShow;
 module.exports.malShowId = malShowId;
+module.exports.anithemeSearchMalId = anithemeSearchMalId;

@@ -44,6 +44,33 @@ async function saveVaCharacters(characters) {
   }
 }
 
+function sanitizeAnithemesArray(openings, endings) {
+  openings = openings.split("\n");
+  endings = endings.split("\n");
+  let songs = [];
+  let regExp = /\[([^)]+)\]/;
+  for (let i = 0; i < openings.length; i++) {
+    let song = regExp.exec(openings[i])[1];
+    song = song.slice(0, song.lastIndexOf("["));
+    if (song.length > 100) {
+      song = song.slice(0, 97) + "...";
+    }
+    songs.push(song);
+  }
+  for (let i = 0; i < endings.length; i++) {
+    let song = regExp.exec(endings[i])[1];
+    song = song.slice(0, song.lastIndexOf("["));
+    if (song.length > 100) {
+      song = song.slice(0, 97) + "...";
+    }
+    songs.push(song);
+  }
+  songs = [...new Set(songs)];
+  songs = songs.slice(0, 25);
+  console.log(songs);
+  return songs;
+}
+
 async function disablePrevious(client, newMessage, prefix) {
   try {
     const channelId = await messages.get(`anime-${prefix}_channelId`);
@@ -84,7 +111,7 @@ module.exports = {
       case "show": {
         const anilistResponse = await anime.anilistShow(query);
         // Anilist Show Found
-        if (anilistResponse != null) {
+        if (anilistResponse == null) {
           const anilistShowEmbed = embed.showEmbedBuilderAnilist(anilistResponse);
           dbAnime.putEmbed("anilistShowEmbed", anilistShowEmbed);
           const trailer = trailerParse(anilistResponse.trailer);
@@ -96,37 +123,33 @@ module.exports = {
             }
             await interaction.reply({embeds: [anilistShowEmbed], components: components});
           } else {
+            const anithemeResponse = await anime.anithemeSearchMalId(anilistResponse.idMal);
+            const [opEmbed, edEmbed] = embed.opEdEmbedsBuilder(anithemeResponse);
+            dbAnime.putEmbed("showOpEmbed", opEmbed);
+            dbAnime.putEmbed("showEdEmbed", edEmbed);
             const malResponse = await anime.malShowId(anilistResponse.idMal);
             const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
             dbAnime.putEmbed("malShowEmbed", malShowEmbed);
-            const songList = malShowEmbed.fields[0].value + malShowEmbed.fields[1].value;
-            const select = button.addSelect(songList.split("\n"));
-            let components = ["anilist"];
+            let components = ["anilist", "opSongs", "edSongs"];
             if (trailer) {
               components.push(button.linkButton(trailer));
             }
-            if (select) {
-              components.unshift("search");
-              components = [button.merge(components)];
-              components.unshift(select);
-            } else {
-              components = [button.merge(components)];
-            }
+            components = [button.merge(components)];
             await interaction.reply({embeds: [malShowEmbed], components: components});
           }
           // Anilist Search Fail
         } else {
           const malResponse = await anime.malShow(query);
+          const anithemeResponse = await anime.anithemeSearchMalId(malResponse.id);
+          const [opEmbed, edEmbed] = embed.opEdEmbedsBuilder(anithemeResponse);
+          dbAnime.putEmbed("showOpEmbed", opEmbed);
+          dbAnime.putEmbed("showEdEmbed", edEmbed);
           const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
-          const songList = malShowEmbed.fields[0].value + malShowEmbed.fields[1].value;
-          const select = button.addSelect(songList.split("\n"));
-          const components = [];
-          if (select) {
-            components.push(select);
-            components.push(button.merge(["search"]));
-          }
+          let components = ["opSongs", "edSongs"];
+          components = [button.merge(components)];
           await interaction.reply({embeds: [malShowEmbed], components: components});
         }
+        await dbAnime.put("showSelectQuery", "");
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
         animeShowButtonInteraction(client, message);
@@ -135,11 +158,11 @@ module.exports = {
 
       case "va": {
         const response = await anime.anilistVa(query);
-        saveVaCharacters(response.characters.edges);
         const vaEmbed = embed.vaEmbedBuilder(response);
-        dbAnime.putEmbed("vaEmbed", vaEmbed);
-        dbAnime.put("vaName", response.name.full);
         if (vaEmbed.title) {
+          dbAnime.putEmbed("vaEmbed", vaEmbed);
+          dbAnime.put("vaName", response.name.full);
+          saveVaCharacters(response.characters.edges);
           await interaction.reply({embeds: [vaEmbed], components: [button.actionRow(["characters"])]});
         } else {
           await interaction.reply({embeds: [vaEmbed], components: []});
@@ -174,13 +197,16 @@ function animeShowButtonInteraction(client, message) {
           components[1] = button.replace(components[1], "mal", "anilist");
         }
         await press.update({embeds: [malEmbed], components});
+      } else if (press.customId == "opSongs") {
+        openingEmbed = await dbAnime.getEmbed("showOpEmbed");
+        await press.reply({embeds: [openingEmbed]});
+      } else if (press.customId == "edSongs") {
+        endingEmbed = await dbAnime.getEmbed("showEdEmbed");
+        await press.reply({embeds: [endingEmbed]});
       } else if (press.customId == "search") {
         const selectQuery = await dbAnime.get("showSelectQuery");
-        if (selectQuery == "") {
-          press.reply({
-            ephemeral: true,
-            content: "Select from the drop down menu!",
-          });
+        if (!selectQuery) {
+          press.reply({ephemeral: true, content: "Select from the drop down menu!"});
         } else {
           const response = await youtube.search(selectQuery);
           press.reply(response);

@@ -9,6 +9,8 @@ const anilistButton = new MessageButton().setCustomId("anilist").setLabel("Anili
 const malButton = new MessageButton().setCustomId("mal").setLabel("MAL").setStyle("PRIMARY");
 const characterButton = new MessageButton().setCustomId("characters").setLabel("Characters").setStyle("PRIMARY");
 const vaButton = new MessageButton().setCustomId("va").setLabel("temp").setStyle("SECONDARY");
+const opSongsButton = new MessageButton().setCustomId("opSongs").setLabel("OP").setStyle("PRIMARY");
+const edSongsButton = new MessageButton().setCustomId("edSongs").setLabel("ED").setStyle("PRIMARY");
 const disabledNextButton = new MessageButton().setCustomId("disabled_next").setStyle("SECONDARY").setEmoji("➡️").setDisabled(true);
 const disabledPrevButton = new MessageButton().setCustomId("disabled_prev").setStyle("SECONDARY").setEmoji("⬅️").setDisabled(true);
 const disabledCheckButton = new MessageButton().setCustomId("disabled_save").setStyle("SECONDARY").setEmoji("✅").setDisabled(true);
@@ -25,6 +27,8 @@ buttons.anilist = anilistButton;
 buttons.mal = malButton;
 buttons.characters = characterButton;
 buttons.va = vaButton;
+buttons.opSongs = opSongsButton;
+buttons.edSongs = edSongsButton;
 buttons.disabled_prev = disabledPrevButton;
 buttons.disabled_next = disabledNextButton;
 buttons.disabled_check = disabledCheckButton;
@@ -79,11 +83,12 @@ function linkButton(url) {
   return button;
 }
 
+// Takes an array and create a select menu
 function addSelect(options) {
   const row = new MessageActionRow();
   const select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
   const optionObject = [];
-  options = sanitizeInput(options);
+  // options = sanitizeInput(options);
   if (options == undefined) {
     return;
   }
