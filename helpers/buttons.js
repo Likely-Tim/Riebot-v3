@@ -9,8 +9,10 @@ const anilistButton = new MessageButton().setCustomId("anilist").setLabel("Anili
 const malButton = new MessageButton().setCustomId("mal").setLabel("MAL").setStyle("PRIMARY");
 const characterButton = new MessageButton().setCustomId("characters").setLabel("Characters").setStyle("PRIMARY");
 const vaButton = new MessageButton().setCustomId("va").setLabel("temp").setStyle("SECONDARY");
+const showButton = new MessageButton().setCustomId("show").setLabel("temp").setStyle("PRIMARY");
 const opSongsButton = new MessageButton().setCustomId("opSongs").setLabel("OP").setStyle("PRIMARY");
 const edSongsButton = new MessageButton().setCustomId("edSongs").setLabel("ED").setStyle("PRIMARY");
+const opEdSongsButton = new MessageButton().setCustomId("opEdSongs").setLabel("OP & ED").setStyle("PRIMARY");
 const disabledNextButton = new MessageButton().setCustomId("disabled_next").setStyle("SECONDARY").setEmoji("➡️").setDisabled(true);
 const disabledPrevButton = new MessageButton().setCustomId("disabled_prev").setStyle("SECONDARY").setEmoji("⬅️").setDisabled(true);
 const disabledCheckButton = new MessageButton().setCustomId("disabled_save").setStyle("SECONDARY").setEmoji("✅").setDisabled(true);
@@ -27,8 +29,10 @@ buttons.anilist = anilistButton;
 buttons.mal = malButton;
 buttons.characters = characterButton;
 buttons.va = vaButton;
+buttons.show = showButton;
 buttons.opSongs = opSongsButton;
 buttons.edSongs = edSongsButton;
+buttons.opEdSongs = opEdSongsButton;
 buttons.disabled_prev = disabledPrevButton;
 buttons.disabled_next = disabledNextButton;
 buttons.disabled_check = disabledCheckButton;
@@ -175,6 +179,20 @@ function setDefault(input, name) {
   }
 }
 
+// Enables all buttons in a MessageActionRow except one button
+function enableAllButOne(messageActionRow, disableCustomId) {
+  const components = messageActionRow.components;
+  for (let i = 0; i < components.length; i++) {
+    if (components[i].customId == disableCustomId) {
+      components[i].disabled = true;
+    } else {
+      components[i].disabled = false;
+    }
+  }
+  messageActionRow.components = components;
+  return messageActionRow;
+}
+
 module.exports.disableAllButtons = disableAllButtons;
 module.exports.linkButton = linkButton;
 module.exports.addSelect = addSelect;
@@ -184,3 +202,4 @@ module.exports.merge = merge;
 module.exports.replace = replace;
 module.exports.changeLabel = changeLabel;
 module.exports.setDefault = setDefault;
+module.exports.enableAllButOne = enableAllButOne;

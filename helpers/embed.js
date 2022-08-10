@@ -62,10 +62,10 @@ function characterEmbed(character) {
 }
 
 function showEmbedBuilderMal(malResponse) {
-  const result = new MessageEmbed();
   if (!malResponse) {
-    return result.setDescription(malResponse);
+    return defaultEmbed();
   }
+  const result = new MessageEmbed();
   result.setTitle(malResponse.title);
   const link = "https://myanimelist.net/anime/" + malResponse.id;
   result.setURL(link);
@@ -130,18 +130,32 @@ function opEdEmbedsBuilder(anithemeResponse) {
   if (!anithemeResponse) {
     return null;
   }
+  if (anithemeResponse.anime.length == 0) {
+    return "";
+  }
   let [openingThemes, endingThemes] = getSongList("anitheme", anithemeResponse);
-  openingThemes = openingThemes.join("\n");
-  endingThemes = endingThemes.join("\n");
-  const openingEmbed = new MessageEmbed();
-  openingEmbed.setTitle(anithemeResponse.anime[0].name + " Openings");
-  openingEmbed.setURL(anithemeResponse.anime[0].resources[0].link);
-  openingEmbed.setDescription(openingThemes);
-  const endingEmbed = new MessageEmbed();
-  endingEmbed.setTitle(anithemeResponse.anime[0].name + " Endings");
-  endingEmbed.setURL(anithemeResponse.anime[0].resources[0].link);
-  endingEmbed.setDescription(endingThemes);
-  return [openingEmbed, endingEmbed];
+  openingThemes = openingThemes.map((theme, index) => {
+    if (openingThemes.length == 1) {
+      return theme;
+    } else {
+      return `${index + 1}. ${theme}`;
+    }
+  });
+  endingThemes = endingThemes.map((theme, index) => {
+    if (endingThemes.length == 1) {
+      return theme;
+    } else {
+      return `${index + 1}. ${theme}`;
+    }
+  });
+  let opEdThemes = `**Openings**\n${openingThemes.join("\n")}\n\n**Endings**\n${endingThemes.join("\n")}`;
+  let link = anithemeResponse.anime[0].images[0].link;
+  const opEdEmbed = new MessageEmbed();
+  opEdEmbed.setTitle(anithemeResponse.anime[0].name);
+  opEdEmbed.setURL(anithemeResponse.anime[0].resources[0].link);
+  opEdEmbed.setThumbnail(link);
+  opEdEmbed.setDescription(opEdThemes);
+  return opEdEmbed;
 }
 
 function songQueueDescription(response) {
@@ -221,10 +235,10 @@ function getSongList(type, songs) {
       if (artists) {
         animeTheme += ` by ${artists}`;
       }
-      animeTheme += ` [EP: ${episodes}]`;
       if (link) {
         animeTheme = `[${animeTheme}](${link})`;
       }
+      animeTheme += ` [EP: ${episodes}]`;
       if (animeThemes[i].type == "OP") {
         openingThemes.push(animeTheme);
       } else if (animeThemes[i].type == "ED") {

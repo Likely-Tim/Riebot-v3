@@ -109,47 +109,34 @@ module.exports = {
 
     switch (type) {
       case "show": {
-        const anilistResponse = await anime.anilistShow(query);
-        // Anilist Show Found
-        if (anilistResponse == null) {
-          const anilistShowEmbed = embed.showEmbedBuilderAnilist(anilistResponse);
-          dbAnime.putEmbed("anilistShowEmbed", anilistShowEmbed);
-          const trailer = trailerParse(anilistResponse.trailer);
-          // No corresponding MAL Entry
-          if (!anilistResponse.idMal) {
-            const components = [];
-            if (trailer) {
-              components.push(button.linkButton(trailer));
-            }
-            await interaction.reply({embeds: [anilistShowEmbed], components: components});
-          } else {
-            const anithemeResponse = await anime.anithemeSearchMalId(anilistResponse.idMal);
-            const [opEmbed, edEmbed] = embed.opEdEmbedsBuilder(anithemeResponse);
-            dbAnime.putEmbed("showOpEmbed", opEmbed);
-            dbAnime.putEmbed("showEdEmbed", edEmbed);
-            const malResponse = await anime.malShowId(anilistResponse.idMal);
-            const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
-            dbAnime.putEmbed("malShowEmbed", malShowEmbed);
-            let components = ["anilist", "opSongs", "edSongs"];
-            if (trailer) {
-              components.push(button.linkButton(trailer));
-            }
-            components = [button.merge(components)];
-            await interaction.reply({embeds: [malShowEmbed], components: components});
-          }
-          // Anilist Search Fail
+        let malResponse = undefined;
+        let anithemeResponse = undefined;
+        if (query.startsWith("id: ")) {
+          const id = query.slice(4);
+          malResponse = await anime.malShowId(id);
+          anithemeResponse = await anime.anithemeSearchMalId(id);
         } else {
-          const malResponse = await anime.malShow(query);
-          const anithemeResponse = await anime.anithemeSearchMalId(malResponse.id);
-          const [opEmbed, edEmbed] = embed.opEdEmbedsBuilder(anithemeResponse);
-          dbAnime.putEmbed("showOpEmbed", opEmbed);
-          dbAnime.putEmbed("showEdEmbed", edEmbed);
-          const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
-          let components = ["opSongs", "edSongs"];
-          components = [button.merge(components)];
-          await interaction.reply({embeds: [malShowEmbed], components: components});
+          malResponse = await anime.malShow(query);
+          anithemeResponse = await anime.anithemeSearchMalId(malResponse.id);
         }
-        await dbAnime.put("showSelectQuery", "");
+        const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
+        dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
+        const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
+        dbAnime.putEmbed("malShowEmbed", malShowEmbed);
+        let showButton = undefined;
+        if (malShowEmbed.title) {
+          showButton = button.changeLabel(button.returnButton("show"), malShowEmbed.title);
+          showButton.disabled = true;
+        }
+        let components = [];
+        if (opEdEmbed) {
+          components.push(showButton);
+          components.push("opEdSongs");
+          components = button.merge(components);
+          await interaction.reply({embeds: [malShowEmbed], components: [components]});
+        } else {
+          await interaction.reply({embeds: [malShowEmbed]});
+        }
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
         animeShowButtonInteraction(client, message);
@@ -179,45 +166,15 @@ module.exports = {
 function animeShowButtonInteraction(client, message) {
   const collector = new InteractionCollector(client, {message});
   collector.on("collect", async (press) => {
-    if (press.isButton()) {
-      const components = press.message.components;
-      if (press.customId == "anilist") {
-        const anilistEmbed = await dbAnime.getEmbed("anilistShowEmbed");
-        if (components[1] == undefined) {
-          components[0] = button.replace(components[0], "anilist", "mal");
-        } else {
-          components[1] = button.replace(components[1], "anilist", "mal");
-        }
-        await press.update({embeds: [anilistEmbed], components});
-      } else if (press.customId == "mal") {
-        const malEmbed = await dbAnime.getEmbed("malShowEmbed");
-        if (components[1] == undefined) {
-          components[0] = button.replace(components[0], "mal", "anilist");
-        } else {
-          components[1] = button.replace(components[1], "mal", "anilist");
-        }
-        await press.update({embeds: [malEmbed], components});
-      } else if (press.customId == "opSongs") {
-        openingEmbed = await dbAnime.getEmbed("showOpEmbed");
-        await press.reply({embeds: [openingEmbed]});
-      } else if (press.customId == "edSongs") {
-        endingEmbed = await dbAnime.getEmbed("showEdEmbed");
-        await press.reply({embeds: [endingEmbed]});
-      } else if (press.customId == "search") {
-        const selectQuery = await dbAnime.get("showSelectQuery");
-        if (!selectQuery) {
-          press.reply({ephemeral: true, content: "Select from the drop down menu!"});
-        } else {
-          const response = await youtube.search(selectQuery);
-          press.reply(response);
-        }
-      }
-    } else if (press.isSelectMenu()) {
-      const value = press.values[0];
-      await dbAnime.put("showSelectQuery", value);
-      const components = press.message.components;
-      button.setDefault(components[0].components[0], value);
-      press.update({components});
+    const messageActionRows = press.message.components;
+    if (press.customId == "opEdSongs") {
+      const components = button.enableAllButOne(messageActionRows[0], "opEdSongs");
+      const showOpEdEmbed = await dbAnime.getEmbed("showOpEdEmbed");
+      await press.update({embeds: [showOpEdEmbed], components: [components]});
+    } else if (press.customId == "show") {
+      const components = button.enableAllButOne(messageActionRows[0], "show");
+      const malShowEmbed = await dbAnime.getEmbed("malShowEmbed");
+      await press.update({embeds: [malShowEmbed], components: [components]});
     }
   });
 }
