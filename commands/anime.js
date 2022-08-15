@@ -4,8 +4,9 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const {InteractionCollector, MessageEmbed} = require("discord.js");
 const embed = require("../helpers/embed.js");
 const anime = require("../helpers/anime.js");
-const youtube = require("../helpers/youtube.js");
 const button = require("../helpers/buttons.js");
+const chart = require("../helpers/chart.js");
+const path = require("path");
 
 const dbAnime = require("../databaseHelpers/anime.js");
 
@@ -44,31 +45,18 @@ async function saveVaCharacters(characters) {
   }
 }
 
-function sanitizeAnithemesArray(openings, endings) {
-  openings = openings.split("\n");
-  endings = endings.split("\n");
-  let songs = [];
-  let regExp = /\[([^)]+)\]/;
-  for (let i = 0; i < openings.length; i++) {
-    let song = regExp.exec(openings[i])[1];
-    song = song.slice(0, song.lastIndexOf("["));
-    if (song.length > 100) {
-      song = song.slice(0, 97) + "...";
+function anilistAiringTrendParse(response) {
+  let nodes = response.trends.nodes;
+  let data = [];
+  let labels = [];
+  for (let i = 0; i < nodes.length; i++) {
+    if (!nodes[i].episode) {
+      break;
     }
-    songs.push(song);
+    data.unshift(nodes[i].averageScore);
+    labels.unshift(nodes[i].episode);
   }
-  for (let i = 0; i < endings.length; i++) {
-    let song = regExp.exec(endings[i])[1];
-    song = song.slice(0, song.lastIndexOf("["));
-    if (song.length > 100) {
-      song = song.slice(0, 97) + "...";
-    }
-    songs.push(song);
-  }
-  songs = [...new Set(songs)];
-  songs = songs.slice(0, 25);
-  console.log(songs);
-  return songs;
+  return [labels, data];
 }
 
 async function disablePrevious(client, newMessage, prefix) {
@@ -104,6 +92,7 @@ module.exports = {
     .addStringOption((option) => option.setName("query").setDescription("What to search").setRequired(true)),
 
   async execute(client, interaction) {
+    await interaction.deferReply();
     const type = interaction.options.getString("type");
     const query = interaction.options.getString("query");
 
@@ -118,6 +107,9 @@ module.exports = {
         } else {
           malResponse = await anime.malShow(query);
           anithemeResponse = await anime.anithemeSearchMalId(malResponse.id);
+          anilistResponse = await anime.anilistAiringTrend(malResponse.id);
+          const [airingTrendLabels, airingTrendData] = anilistAiringTrendParse(anilistResponse);
+          await chart.generateLineChart("Airing Score", airingTrendLabels, airingTrendData);
         }
         const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
         dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
@@ -132,10 +124,14 @@ module.exports = {
         if (opEdEmbed) {
           components.push(showButton);
           components.push("opEdSongs");
+          components.push("score");
           components = button.merge(components);
-          await interaction.reply({embeds: [malShowEmbed], components: [components]});
+          await interaction.editReply({embeds: [malShowEmbed], components: [components]});
         } else {
-          await interaction.reply({embeds: [malShowEmbed]});
+          components.push(showButton);
+          components.push("score");
+          components = button.merge(components);
+          await interaction.editReply({embeds: [malShowEmbed]});
         }
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
@@ -150,9 +146,9 @@ module.exports = {
           dbAnime.putEmbed("vaEmbed", vaEmbed);
           dbAnime.put("vaName", response.name.full);
           saveVaCharacters(response.characters.edges);
-          await interaction.reply({embeds: [vaEmbed], components: [button.actionRow(["characters"])]});
+          await interaction.editReply({embeds: [vaEmbed], components: [button.actionRow(["characters"])]});
         } else {
-          await interaction.reply({embeds: [vaEmbed], components: []});
+          await interaction.editReply({embeds: [vaEmbed], components: []});
         }
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
@@ -175,6 +171,9 @@ function animeShowButtonInteraction(client, message) {
       const components = button.enableAllButOne(messageActionRows[0], "show");
       const malShowEmbed = await dbAnime.getEmbed("malShowEmbed");
       await press.update({embeds: [malShowEmbed], components: [components]});
+    } else if (press.customId == "score") {
+      const components = button.enableAllButOne(messageActionRows[0], "score");
+      await press.update({embeds: [], components: [components], files: [path.join(__dirname, "../media/animeShow.png")]});
     }
   });
 }

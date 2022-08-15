@@ -188,6 +188,40 @@ async function anilistShow(query) {
   return response.data.Media;
 }
 
+async function anilistAiringTrend(malId) {
+  const search = `
+    query {
+      Media(idMal: ${malId}, type: ANIME) {
+        title {
+          romaji
+          english
+          native
+        }
+        trends(sort: [EPISODE_DESC], releasing: true) {
+          nodes {
+            date
+            averageScore
+            episode
+          }
+        }
+      }     
+    }
+    `;
+  const url = "https://graphql.anilist.co";
+  let response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: search,
+    }),
+  });
+  response = await response.json();
+  return response.data.Media;
+}
+
 async function anithemeSearchMalId(malId) {
   const url = `https://api.animethemes.moe/anime?&include=images,resources,animethemes.song.artists,animethemes.animethemeentries.videos&fields[anime]=name&fields[animetheme]=type&fields[song]=title&fields[artist]=name&fields[animethemeentry]=episodes&fields[video]=link&filter[has]=resources&filter[site]=MyAnimeList&filter[external_id]=${malId}`;
   let response = await fetch(url, {
@@ -208,3 +242,4 @@ module.exports.anilistShow = anilistShow;
 module.exports.malShow = malShow;
 module.exports.malShowId = malShowId;
 module.exports.anithemeSearchMalId = anithemeSearchMalId;
+module.exports.anilistAiringTrend = anilistAiringTrend;
