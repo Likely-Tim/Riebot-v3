@@ -1,12 +1,12 @@
 const CryptoJS = require("crypto-js");
-const { Level } = require("level");
+const {Level} = require("level");
 
 const db = new Level("./databases/tokens");
 
 const CRYPTO_PASSWORD = process.env.CRYPTO_PASSWORD;
 
 async function put(key, value) {
-  const encrypted = CryptoJS.AES.encrypt(value, CRYPTO_PASSWORD).toString(CryptoJS.enc.Utf8);
+  const encrypted = CryptoJS.AES.encrypt(value, CRYPTO_PASSWORD).toString();
   await db.put(key, encrypted);
 }
 
