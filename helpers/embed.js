@@ -66,7 +66,7 @@ function showEmbedBuilderMal(malResponse) {
     return defaultEmbed();
   }
   const result = new MessageEmbed();
-  result.setTitle(malResponse.title);
+  result.setTitle(malResponse.title.slice(0, 80));
   const link = "https://myanimelist.net/anime/" + malResponse.id;
   result.setURL(link);
   result.setAuthor({
