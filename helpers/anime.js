@@ -43,7 +43,7 @@ async function malShow(query) {
   }
   if (response.status == 401) {
     await malRefreshToken();
-    return await malSearch(query);
+    return await malShow(query);
   }
   response = await response.json();
   const id = response.data[0].node.id;

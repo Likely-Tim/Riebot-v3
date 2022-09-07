@@ -166,11 +166,11 @@ function animeShowButtonInteraction(client, message) {
     if (press.customId == "opEdSongs") {
       const components = button.enableAllButOne(messageActionRows[0], "opEdSongs");
       const showOpEdEmbed = await dbAnime.getEmbed("showOpEdEmbed");
-      await press.update({embeds: [showOpEdEmbed], components: [components]});
+      await press.update({embeds: [showOpEdEmbed], components: [components], files: []});
     } else if (press.customId == "show") {
       const components = button.enableAllButOne(messageActionRows[0], "show");
       const malShowEmbed = await dbAnime.getEmbed("malShowEmbed");
-      await press.update({embeds: [malShowEmbed], components: [components]});
+      await press.update({embeds: [malShowEmbed], components: [components], files: []});
     } else if (press.customId == "score") {
       const components = button.enableAllButOne(messageActionRows[0], "score");
       await press.update({embeds: [], components: [components], files: [path.join(__dirname, "../media/animeShow.png")]});
