@@ -20,11 +20,5 @@ async function get(key) {
   }
 }
 
-async function print() {
-  for await (const [key, value] of db.iterator()) {
-    console.log(key + " " + value);
-  }
-}
-
 module.exports.put = put;
 module.exports.get = get;

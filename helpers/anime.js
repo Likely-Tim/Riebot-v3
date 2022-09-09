@@ -55,6 +55,25 @@ async function malShow(query) {
   return response.json();
 }
 
+async function malShowSearch(query) {
+  query = queryCreate(query.split(" "));
+  let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=20&nsfw=true`;
+  const accessToken = await dbToken.get("malAccess");
+  const authorization = "Bearer " + accessToken;
+  let response = await fetch(url, {
+    method: "GET",
+    headers: {Authorization: authorization},
+  });
+  if (response.status == 400) {
+    return "No show found!";
+  }
+  if (response.status == 401) {
+    await malRefreshToken();
+    return await malShow(query);
+  }
+  return await response.json();
+}
+
 async function malShowId(id) {
   const url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
   const accessToken = await dbToken.get("malAccess");
@@ -243,3 +262,4 @@ module.exports.malShow = malShow;
 module.exports.malShowId = malShowId;
 module.exports.anithemeSearchMalId = anithemeSearchMalId;
 module.exports.anilistAiringTrend = anilistAiringTrend;
+module.exports.malShowSearch = malShowSearch;

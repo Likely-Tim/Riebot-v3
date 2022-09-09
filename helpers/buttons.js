@@ -91,13 +91,12 @@ function linkButton(url) {
 
 // Takes an array and create a select menu
 function addSelect(options) {
-  const row = new MessageActionRow();
-  const select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
-  const optionObject = [];
-  // options = sanitizeInput(options);
   if (options == undefined) {
     return;
   }
+  const row = new MessageActionRow();
+  const select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
+  const optionObject = [];
   for (let i = 0; i < options.length; i++) {
     const object = {};
     const option = options[i];
@@ -112,51 +111,26 @@ function addSelect(options) {
   }
 }
 
-function sanitizeInput(options) {
-  try {
-    let removeIndex = [];
-    for (let i = 0; i < options.length; i++) {
-      let option = options[i];
-      if (option == "" || option == "N/A") {
-        removeIndex.unshift(i);
-        continue;
-      }
-      option = option.replace(/#[A-Z]*[0-9]*: /, "");
-      option = option.replace(/\((eps|ep) ([0-9]+-[0-9]+|[0-9]+)(,+ +([0-9]+|[0-9]+-[0-9]+))*\)/, "");
-      options[i] = option;
-    }
-    for (let i = 0; i < removeIndex.length; i++) {
-      options.splice(removeIndex[i], 1);
-    }
-    removeIndex = [];
-    const songs = [];
-    for (let i = 0; i < options.length; i++) {
-      const song = options[i].match(/".*"/).toString();
-      if (songs.includes(song)) {
-        options[songs.indexOf(song)] = song;
-        removeIndex.unshift(i);
-      } else {
-        songs.push(song);
-      }
-    }
-    for (let i = 0; i < removeIndex.length; i++) {
-      options.splice(removeIndex[i], 1);
-    }
-    for (let i = 0; i < options.length; i++) {
-      const option = options[i];
-      if (option.length > 100) {
-        options[i] = option.match(/".*"/).toString();
-      }
-    }
-    options = options.splice(0, 25);
-    return options;
-  } catch {
-    console.log("Error: Sanitize");
+function addSelectObject(object) {
+  const row = new MessageActionRow();
+  const select = new MessageSelectMenu().setCustomId("select").setPlaceholder("Nothing selected");
+  let optionObject = [];
+  for (let key in object) {
+    let option = {};
+    option.label = key;
+    option.value = String(object[key]);
+    optionObject.push(option);
   }
+  select.addOptions(optionObject);
+  row.addComponents(select);
+  return row;
 }
 
 // Disables all buttons in a MessageActionRow Array except Links
 function disableAllButtons(input) {
+  if (!input) {
+    return [];
+  }
   for (let j = 0; j < input.length; j++) {
     const actionRow = input[j];
     for (let i = 0; i < actionRow.components.length; i++) {
@@ -205,3 +179,4 @@ module.exports.replace = replace;
 module.exports.changeLabel = changeLabel;
 module.exports.setDefault = setDefault;
 module.exports.enableAllButOne = enableAllButOne;
+module.exports.addSelectObject = addSelectObject;

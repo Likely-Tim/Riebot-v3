@@ -1,8 +1,8 @@
 const e = require("express");
 const {Level} = require("level");
 
-const db = new Level("./databases/anime");
-const embeds = db.sublevel("", {valueEncoding: "json"});
+const db = new Level("./databases/messageInteractions");
+const collectors = db.sublevel("", {valueEncoding: "json"});
 
 async function put(key, value) {
   await db.put(key, value);
@@ -16,13 +16,13 @@ async function get(key) {
   }
 }
 
-async function putEmbed(key, value) {
-  await embeds.put(key, value);
+async function putCollector(key, value) {
+  await collectors.put(key, value);
 }
 
-async function getEmbed(key) {
+async function getCollector(key) {
   try {
-    return await embeds.get(key);
+    return await collectors.get(key);
   } catch (error) {
     console.log(error);
   }
@@ -30,5 +30,5 @@ async function getEmbed(key) {
 
 module.exports.put = put;
 module.exports.get = get;
-module.exports.getEmbed = getEmbed;
-module.exports.putEmbed = putEmbed;
+module.exports.getCollector = getCollector;
+module.exports.putCollector = putCollector;

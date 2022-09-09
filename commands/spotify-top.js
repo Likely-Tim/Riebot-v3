@@ -1,22 +1,16 @@
 const Keyv = require("keyv");
-const { KeyvFile } = require("keyv-file");
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { InteractionCollector } = require("discord.js");
+const {KeyvFile} = require("keyv-file");
+const {SlashCommandBuilder} = require("@discordjs/builders");
+const {InteractionCollector} = require("discord.js");
 const spotify = require("../helpers/spotify.js");
 const button = require("../helpers/buttons.js");
 
 // Databases
+const dbInteractions = require("../databaseHelpers/messageInteractions.js");
+
 const db = new Keyv({
   store: new KeyvFile({
     filename: "storage/spotify-top.json",
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
-
-const messages = new Keyv({
-  store: new KeyvFile({
-    filename: "storage/messages.json",
     encode: JSON.stringify,
     decode: JSON.parse,
   }),
@@ -56,17 +50,17 @@ async function contentRetrieve(action) {
 
 async function disablePrevious(client, newMessage) {
   try {
-    const channelId = await messages.get("spotify-top_channelId");
-    const channel = await client.channels.fetch(channelId);
-    const oldMessageId = await messages.get("spotify-top_message_id");
-    const oldMessage = await channel.messages.fetch(oldMessageId);
+    const oldChannelId = await dbInteractions.get("spotify-top_channelId");
+    const oldChannel = await client.channels.fetch(oldChannelId);
+    const oldMessageId = await dbInteractions.get("spotify-top_messageId");
+    const oldMessage = await oldChannel.messages.fetch(oldMessageId);
     const buttons = button.disableAllButtons(oldMessage.components);
-    oldMessage.edit({ components: buttons });
+    oldMessage.edit({components: buttons});
   } catch (error) {
-    console.log("[Spotify-Top] Could not find previous message.");
+    console.log(error);
   } finally {
-    await messages.set("spotify-top_channelId", newMessage.channelId);
-    await messages.set("spotify-top_message_id", newMessage.id);
+    await dbInteractions.put("spotify-top_channelId", newMessage.channelId);
+    await dbInteractions.put("spotify-top_messageId", newMessage.id);
   }
 }
 
@@ -87,9 +81,7 @@ module.exports = {
     .addStringOption((option) =>
       option
         .setName("time")
-        .setDescription(
-          "Time Length (Short Term: 1 month, Medium Term: 6 month, Long Term: From Beginning)"
-        )
+        .setDescription("Time Length (Short Term: 1 month, Medium Term: 6 month, Long Term: From Beginning)")
         .setRequired(true)
         .addChoices([
           ["short_term", "short_term"],
@@ -107,7 +99,7 @@ module.exports = {
     if (result[1] == 1) {
       components = [button.actionRow(["disabled_prev", "disabled_next"])];
     }
-    await interaction.reply({ content: result[0], components });
+    await interaction.reply({content: result[0], components});
 
     const message = await interaction.fetchReply();
     await disablePrevious(client, message);
@@ -123,7 +115,7 @@ function spotifyTopButtonInteraction(client, message) {
   });
   collector.on("collect", async (press) => {
     const result = await contentRetrieve(press.customId);
-    press.update({ content: result[0], components: result[1] });
+    press.update({content: result[0], components: result[1]});
   });
 }
 

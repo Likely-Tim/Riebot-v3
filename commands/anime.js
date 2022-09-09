@@ -1,5 +1,3 @@
-const Keyv = require("keyv");
-const {KeyvFile} = require("keyv-file");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {InteractionCollector, MessageEmbed} = require("discord.js");
 const embed = require("../helpers/embed.js");
@@ -8,24 +6,9 @@ const button = require("../helpers/buttons.js");
 const chart = require("../helpers/chart.js");
 const path = require("path");
 
-const dbAnime = require("../databaseHelpers/anime.js");
-
 // Databases
-const db = new Keyv({
-  store: new KeyvFile({
-    filename: "storage/anime.json",
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
-
-const messages = new Keyv({
-  store: new KeyvFile({
-    filename: "storage/messages.json",
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
+const dbAnime = require("../databaseHelpers/anime.js");
+const dbInteractions = require("../databaseHelpers/messageInteractions.js");
 
 function trailerParse(data) {
   if (data == null) {
@@ -61,17 +44,17 @@ function anilistAiringTrendParse(response) {
 
 async function disablePrevious(client, newMessage, prefix) {
   try {
-    const channelId = await messages.get(`anime-${prefix}_channelId`);
-    const channel = await client.channels.fetch(channelId);
-    const oldMessageId = await messages.get(`anime-${prefix}_message_id`);
-    const oldMessage = await channel.messages.fetch(oldMessageId);
+    const oldChannelId = await dbInteractions.get(`anime-${prefix}_channelId`);
+    const oldChannel = await client.channels.fetch(oldChannelId);
+    const oldMessageId = await dbInteractions.get(`anime-${prefix}_messageId`);
+    const oldMessage = await oldChannel.messages.fetch(oldMessageId);
     const buttons = button.disableAllButtons(oldMessage.components);
     oldMessage.edit({components: buttons});
   } catch (error) {
-    console.log(`[Anime-${prefix}] Could not find previous message.`);
+    console.log(error);
   } finally {
-    await messages.set(`anime-${prefix}_channelId`, newMessage.channelId);
-    await messages.set(`anime-${prefix}_message_id`, newMessage.id);
+    await dbInteractions.put(`anime-${prefix}_channelId`, newMessage.channelId);
+    await dbInteractions.put(`anime-${prefix}_messageId`, newMessage.id);
   }
 }
 
@@ -98,44 +81,16 @@ module.exports = {
 
     switch (type) {
       case "show": {
-        let malResponse = undefined;
-        let anithemeResponse = undefined;
-        if (query.startsWith("id: ")) {
-          const id = query.slice(4);
-          malResponse = await anime.malShowId(id);
-          anithemeResponse = await anime.anithemeSearchMalId(id);
-        } else {
-          malResponse = await anime.malShow(query);
-          anithemeResponse = await anime.anithemeSearchMalId(malResponse.id);
-          anilistResponse = await anime.anilistAiringTrend(malResponse.id);
-          const [airingTrendLabels, airingTrendData] = anilistAiringTrendParse(anilistResponse);
-          await chart.generateLineChart("Airing Score", airingTrendLabels, airingTrendData);
+        let malSearchResponse = await anime.malShowSearch(query);
+        let malDict = {};
+        for (let i = 0; i < malSearchResponse.data.length; i++) {
+          malDict[malSearchResponse.data[i].node.title] = malSearchResponse.data[i].node.id;
         }
-        const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
-        dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
-        const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
-        dbAnime.putEmbed("malShowEmbed", malShowEmbed);
-        let showButton = undefined;
-        if (malShowEmbed.title) {
-          showButton = button.changeLabel(button.returnButton("show"), malShowEmbed.title);
-          showButton.disabled = true;
-        }
-        let components = [];
-        if (opEdEmbed) {
-          components.push(showButton);
-          components.push("opEdSongs");
-          components.push("score");
-          components = button.merge(components);
-          await interaction.editReply({embeds: [malShowEmbed], components: [components]});
-        } else {
-          components.push(showButton);
-          components.push("score");
-          components = button.merge(components);
-          await interaction.editReply({embeds: [malShowEmbed]});
-        }
+        let selectComponent = button.addSelectObject(malDict);
+        await interaction.editReply({components: [selectComponent]});
         const message = await interaction.fetchReply();
-        disablePrevious(client, message, type);
-        animeShowButtonInteraction(client, message);
+        disablePrevious(client, message, `${type}Search`);
+        animeSearchInteraction(client, message, type);
         return `${type}_${query}`;
       }
 
@@ -158,6 +113,44 @@ module.exports = {
     }
   },
 };
+
+function animeSearchInteraction(client, message, type) {
+  const collector = new InteractionCollector(client, {message});
+  collector.on("collect", async (interaction) => {
+    interaction.deferReply();
+    let id = interaction.values[0];
+    let malResponse = await anime.malShowId(id);
+    let anithemeResponse = await anime.anithemeSearchMalId(id);
+    let anilistResponse = await anime.anilistAiringTrend(id);
+    const [airingTrendLabels, airingTrendData] = anilistAiringTrendParse(anilistResponse);
+    await chart.generateLineChart("Airing Score", airingTrendLabels, airingTrendData);
+    const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
+    dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
+    const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
+    dbAnime.putEmbed("malShowEmbed", malShowEmbed);
+    let showButton = undefined;
+    if (malShowEmbed.title) {
+      showButton = button.changeLabel(button.returnButton("show"), malShowEmbed.title);
+      showButton.disabled = true;
+    }
+    let components = [];
+    if (opEdEmbed) {
+      components.push(showButton);
+      components.push("opEdSongs");
+      components.push("score");
+      components = button.merge(components);
+      await interaction.editReply({embeds: [malShowEmbed], components: [components]});
+    } else {
+      components.push(showButton);
+      components.push("score");
+      components = button.merge(components);
+      await interaction.editReply({embeds: [malShowEmbed]});
+    }
+    message = await interaction.fetchReply();
+    disablePrevious(client, message, type);
+    animeShowButtonInteraction(client, message);
+  });
+}
 
 function animeShowButtonInteraction(client, message) {
   const collector = new InteractionCollector(client, {message});
@@ -248,3 +241,4 @@ function animeVAButtonInteraction(client, message) {
 
 module.exports.animeShowButtonInteraction = animeShowButtonInteraction;
 module.exports.animeVAButtonInteraction = animeVAButtonInteraction;
+module.exports.animeSearchInteraction = animeSearchInteraction;
