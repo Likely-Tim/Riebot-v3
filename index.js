@@ -1,7 +1,5 @@
 require("dotenv").config();
 const fs = require("fs");
-const Keyv = require("keyv");
-const {KeyvFile} = require("keyv-file");
 const keepAlive = require("./server");
 const refreshSlashCommands = require("./SlashRefresh");
 const {Client, Collection, Intents} = require("discord.js");
@@ -12,19 +10,6 @@ const {Player} = require("discord-music-player");
 const player = new Player(client);
 client.player = player;
 
-const postgress = require("pg");
-const database = new postgress.Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {rejectUnauthorized: false},
-});
-database.connect();
-database.query("CREATE TABLE IF NOT EXISTS databaseIndex (NAME TEXT PRIMARY KEY, INDEX INT, LENGTH INT);");
-database.query("CREATE TABLE IF NOT EXISTS messageIndex (NAME TEXT PRIMARY KEY, channelId BIGINT, MESSAGE_ID BIGINT);");
-database.query("CREATE TABLE IF NOT EXISTS tokens (NAME TEXT PRIMARY KEY, TOKEN TEXT);");
-database.query("CREATE TABLE IF NOT EXISTS spotifyTrack (INDEX INT PRIMARY KEY, DATA TEXT);");
-database.query("CREATE TABLE IF NOT EXISTS spotifyArtist (INDEX INT PRIMARY KEY, DATA TEXT);");
-database.query("CREATE TABLE IF NOT EXISTS spotifyAlbum (INDEX INT PRIMARY KEY, DATA TEXT);");
-
 const {spotifyButtonInteraction} = require("./commands/spotify.js");
 const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js");
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
@@ -34,14 +19,6 @@ const {tttButtonInteraction} = require("./commands/ttt.js");
 
 // Databases
 const dbInteractions = require("./databaseHelpers/messageInteractions.js");
-
-const messages = new Keyv({
-  store: new KeyvFile({
-    filename: "storage/messages.json",
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
 
 refreshSlashCommands();
 client.commands = new Collection();
@@ -144,7 +121,11 @@ async function buttonInteractions(client, channelId, messageId, initializer, key
   try {
     const channel = await client.channels.fetch(channelId);
     const message = await channel.messages.fetch(messageId);
-    initializer(client, message);
+    if (key.startsWith("spotify-")) {
+      initializer(client, message, key.split("-")[1]);
+    } else {
+      initializer(client, message);
+    }
   } catch (error) {
     console.log(`[${key}] Could not find previous message.`);
   }
@@ -152,7 +133,9 @@ async function buttonInteractions(client, channelId, messageId, initializer, key
 
 function messageMapper() {
   const map = new Map();
-  map.set("spotify", spotifyButtonInteraction);
+  map.set("spotify-artist", spotifyButtonInteraction);
+  map.set("spotify-track", spotifyButtonInteraction);
+  map.set("spotify-album", spotifyButtonInteraction);
   map.set("spotify-playing", spotifyPlayingButtonInteraction);
   map.set("spotify-top", spotifyTopButtonInteraction);
   map.set("anime-show", animeShowButtonInteraction);

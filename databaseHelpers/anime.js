@@ -1,4 +1,3 @@
-const e = require("express");
 const {Level} = require("level");
 
 const db = new Level("./databases/anime");
