@@ -1,3 +1,4 @@
+Fhusion#2855,anime,show_summer
 Fhusion#2855,spotify,artist_rie
 Fhusion#2855,spotify,track_test
 Fhusion#2855,spotify,album_te

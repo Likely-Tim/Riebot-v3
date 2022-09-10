@@ -28,6 +28,12 @@ async function saveVaCharacters(characters) {
   }
 }
 
+/**
+ * Parses Anilist Airing Trend
+ *
+ * @param {Object} response - Anilist Airing Trend Response
+ * @returns {Array} [Labels, Data]
+ */
 function anilistAiringTrendParse(response) {
   let nodes = response.trends.nodes;
   let data = [];
@@ -42,19 +48,26 @@ function anilistAiringTrendParse(response) {
   return [labels, data];
 }
 
-async function disablePrevious(client, newMessage, prefix) {
+/**
+ * Disables Previous Interactions
+ *
+ * @param {Client} client - Discord Client
+ * @param {Message} newMessage - Message that was sent
+ * @param {string} type - Type of command
+ */
+async function disablePrevious(client, newMessage, type) {
   try {
-    const oldChannelId = await dbInteractions.get(`anime-${prefix}_channelId`);
-    const oldChannel = await client.channels.fetch(oldChannelId);
-    const oldMessageId = await dbInteractions.get(`anime-${prefix}_messageId`);
-    const oldMessage = await oldChannel.messages.fetch(oldMessageId);
-    const buttons = button.disableAllButtons(oldMessage.components);
-    oldMessage.edit({components: buttons});
+    const previousChannelId = await dbInteractions.get(`anime-${type}_channelId`);
+    const previousChannel = await client.channels.fetch(previousChannelId);
+    const previousMessageId = await dbInteractions.get(`anime-${type}_messageId`);
+    const previousMessage = await previousChannel.messages.fetch(previousMessageId);
+    const buttons = button.disableAllButtons(previousMessage.components);
+    previousMessage.edit({components: buttons});
   } catch (error) {
     console.log(error);
   } finally {
-    await dbInteractions.put(`anime-${prefix}_channelId`, newMessage.channelId);
-    await dbInteractions.put(`anime-${prefix}_messageId`, newMessage.id);
+    await dbInteractions.put(`anime-${type}_channelId`, newMessage.channelId);
+    await dbInteractions.put(`anime-${type}_messageId`, newMessage.id);
   }
 }
 
@@ -118,7 +131,7 @@ function animeSearchInteraction(client, message, type) {
   const collector = new InteractionCollector(client, {message});
   collector.on("collect", async (interaction) => {
     interaction.deferReply();
-    let id = interaction.values[0];
+    const id = interaction.values[0];
     let malResponse = await anime.malShowId(id);
     let anithemeResponse = await anime.anithemeSearchMalId(id);
     let anilistResponse = await anime.anilistAiringTrend(id);
