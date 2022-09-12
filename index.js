@@ -14,10 +14,10 @@ const {spotifyButtonInteraction} = require("./commands/spotify.js");
 const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js");
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
-const file = require("./helpers/file.js");
+const file = require("./utils/file.js");
 
 // Databases
-const dbInteractions = require("./databaseHelpers/messageInteractions.js");
+const dbInteractions = require("./databaseUtils/messageInteractions.js");
 
 refreshSlashCommands();
 client.commands = new Collection();

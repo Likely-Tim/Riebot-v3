@@ -3,7 +3,7 @@ const fetch = require("node-fetch");
 const MALID = process.env.MAL_ID;
 const MALSecret = process.env.MAL_SECRET;
 
-const dbToken = require("../databaseHelpers/tokens.js");
+const dbToken = require("../databaseUtils/tokens.js");
 
 function queryCreate(args) {
   const query = args.join("+");

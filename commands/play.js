@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const voice = require("../helpers/voice.js");
+const {SlashCommandBuilder} = require("@discordjs/builders");
+const voice = require("../utils/voice.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,9 +18,7 @@ module.exports = {
           ["Shuffle", "shuffle"],
         ])
     )
-    .addStringOption((option) =>
-      option.setName("query").setDescription("What to search")
-    ),
+    .addStringOption((option) => option.setName("query").setDescription("What to search")),
   async execute(client, interaction) {
     await interaction.deferReply();
     if (!interaction.member.voice.channelId) {
@@ -36,7 +34,7 @@ module.exports = {
       case "song_link": {
         const success = await voice.linkPlay(query);
         if (success) {
-          interaction.editReply({ embeds: [voice.getSongQueue()] });
+          interaction.editReply({embeds: [voice.getSongQueue()]});
           return;
         } else {
           interaction.editReply(`Can't play ${query}.`);
@@ -47,7 +45,7 @@ module.exports = {
       case "playlist_link": {
         const success = await voice.linkPlaylist(query);
         if (success) {
-          interaction.editReply({ embeds: [voice.getSongQueue()] });
+          interaction.editReply({embeds: [voice.getSongQueue()]});
           return;
         } else {
           interaction.editReply(`Can't play ${query}.`);
@@ -56,17 +54,17 @@ module.exports = {
       }
 
       case "current": {
-        interaction.editReply({ embeds: [voice.getCurrentSong()] });
+        interaction.editReply({embeds: [voice.getCurrentSong()]});
         return;
       }
 
       case "skip": {
-        interaction.editReply({ embeds: [voice.skipSong()] });
+        interaction.editReply({embeds: [voice.skipSong()]});
         return;
       }
 
       case "shuffle": {
-        interaction.editReply({ embeds: [voice.shuffle()] });
+        interaction.editReply({embeds: [voice.shuffle()]});
         return;
       }
     }

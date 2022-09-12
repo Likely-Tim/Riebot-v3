@@ -1,10 +1,38 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utils/spotify.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utils/spotify.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * @module Spotify
  */
 
 const fetch = require("node-fetch");
 
-const dbToken = require("../databaseHelpers/tokens.js");
+const dbToken = require("../databaseUtils/tokens.js");
 
 const SPOTIFY_ID = process.env.SPOTIFY_ID;
 const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
@@ -12,7 +40,7 @@ const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
 /**
  * Refreshes Stored Spotify Access Token
  *
- * @return {Promise<boolean>} Boolean if successful or not
+ * @return {Promise&lt;boolean>} Boolean if successful or not
  */
 async function refreshToken() {
   const refreshToken = await dbToken.get("spotifyRefresh");
@@ -25,7 +53,7 @@ async function refreshToken() {
   };
   let response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
     body: new URLSearchParams(data),
   });
   if (response.status != 200) {
@@ -42,17 +70,15 @@ async function refreshToken() {
  *
  * @param {string} type - Type to search for (Allowed Values: "album", "artist", "track")
  * @param {string} query - Search Query
- * @return {Promise<object>} Search Response
+ * @return {Promise&lt;object>} Search Response
  */
 async function search(type, query) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(
-    query
-  )}&type=${type}&limit=5`;
+  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&amp;type=${type}&amp;limit=5`;
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     return await response.json();
@@ -68,7 +94,7 @@ async function search(type, query) {
  * Get the currently playing track
  *
  * @param {boolean} uri - Want URI or link to track
- * @return {Promise<string>} URI or link of currently playing track
+ * @return {Promise&lt;string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
   const accessToken = await dbToken.get("spotifyAccess");
@@ -76,7 +102,7 @@ async function currentlyPlaying(uri) {
   const authorization = "Bearer " + accessToken;
   let response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     response = await response.json();
@@ -113,7 +139,7 @@ async function playlistAddPlaying(playlistId) {
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 201) {
     return true;
@@ -130,15 +156,15 @@ async function playlistAddPlaying(playlistId) {
  *
  * @param {string} type - Type to search for (Allowed Values: artist, track)
  * @param {string} period - Time period (Allowed Values: short_term, medium_term, long_term)
- * @return {Promise<object>} Spotify Results
+ * @return {Promise&lt;object>} Spotify Results
  */
 async function topPlayed(type, period) {
   const accessToken = await dbToken.get("spotifyAccess");
-  const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
+  const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&amp;limit=5`;
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     return await response.json();
@@ -154,7 +180,7 @@ async function topPlayed(type, period) {
  * Get a Spotify playlist by its ID
  *
  * @param {string} playlistId - Spotify Playlist ID
- * @return {Promise<object>} Spotify Result
+ * @return {Promise&lt;object>} Spotify Result
  */
 async function getPlaylist(playlistId) {
   const accessToken = await dbToken.get("spotifyAccess");
@@ -162,7 +188,7 @@ async function getPlaylist(playlistId) {
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     return await response.json();
@@ -178,14 +204,14 @@ async function getPlaylist(playlistId) {
  * Get the next page of data
  *
  * @param {string} url - URL for next page
- * @return {Promise<object>} Spotify Results
+ * @return {Promise&lt;object>} Spotify Results
  */
 async function nextPage(url) {
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     return await response.json();
@@ -202,16 +228,16 @@ async function nextPage(url) {
  *
  * @param {string} name - Name of the playlist
  * @param {boolean} isPublic - Playlist is public or not
- * @return {Promise<object>} Spotify Playlist
+ * @return {Promise&lt;object>} Spotify Playlist
  */
 async function createPlaylist(name, isPublic) {
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = "https://api.spotify.com/v1/users/fhusion/playlists";
-  const data = { name, public: isPublic };
+  const data = {name, public: isPublic};
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
     body: JSON.stringify(data),
   });
   if (response.status == 201) {
@@ -228,17 +254,17 @@ async function createPlaylist(name, isPublic) {
  * Add items to a playlist
  *
  * @param {string} playlistId - Spotify Playlist ID
- * @param {Array<string>} uriArray - Array of URIs
- * @return {Promise<boolean>} Successful or not
+ * @param {Array&lt;string>} uriArray - Array of URIs
+ * @return {Promise&lt;boolean>} Successful or not
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
-  const data = { uris: uriArray };
+  const data = {uris: uriArray};
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
     body: JSON.stringify(data),
   });
   if (response.status == 201) {
@@ -263,7 +289,7 @@ async function unfollowPlaylist(playlistId) {
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
   const response = await fetch(url, {
     method: "DELETE",
-    headers: { Authorization: authorization },
+    headers: {Authorization: authorization},
   });
   if (response.status == 200) {
     return true;
@@ -279,7 +305,7 @@ async function unfollowPlaylist(playlistId) {
  * Create playlists of length 100
  *
  * @param {object} playlist - Original Spotify Playlist Object
- * @return {Array<string>} Array of Playlist IDs
+ * @return {Array&lt;string>} Array of Playlist IDs
  */
 async function voiceTempPlaylist(playlist) {
   const tempPlaylistIds = [];
@@ -287,7 +313,7 @@ async function voiceTempPlaylist(playlist) {
   let tempPlaylist = await createPlaylist("Temp", false);
   let tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
-  for (let i = 0; i < playlist.tracks.items.length; i++) {
+  for (let i = 0; i &lt; playlist.tracks.items.length; i++) {
     if (playlist.tracks.items[i].is_local) {
       continue;
     }
@@ -299,7 +325,7 @@ async function voiceTempPlaylist(playlist) {
   tempPlaylist = await createPlaylist("Temp", false);
   tempPlaylistId = tempPlaylist.id;
   tempPlaylistIds.push(tempPlaylistId);
-  for (let i = 0; i < playlist.items.length; i++) {
+  for (let i = 0; i &lt; playlist.items.length; i++) {
     if (playlist.items[i].track.is_local) {
       continue;
     }
@@ -312,7 +338,7 @@ async function voiceTempPlaylist(playlist) {
     tempPlaylist = await createPlaylist("Temp", false);
     tempPlaylistId = tempPlaylist.id;
     tempPlaylistIds.push(tempPlaylistId);
-    for (let i = 0; i < playlist.items.length; i++) {
+    for (let i = 0; i &lt; playlist.items.length; i++) {
       if (playlist.items[i].is_local) {
         continue;
       }
@@ -330,3 +356,26 @@ module.exports.playlistAddPlaying = playlistAddPlaying;
 module.exports.getPlaylist = getPlaylist;
 module.exports.voiceTempPlaylist = voiceTempPlaylist;
 module.exports.unfollowPlaylist = unfollowPlaylist;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Spotify.html">Spotify</a></li></ul><h3>Global</h3><ul><li><a href="global.html#anilistAiringTrendParse">anilistAiringTrendParse</a></li><li><a href="global.html#disablePrevious">disablePrevious</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a> on Mon Sep 12 2022 11:31:46 GMT-0700 (Pacific Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

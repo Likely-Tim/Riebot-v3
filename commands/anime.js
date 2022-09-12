@@ -1,14 +1,14 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {InteractionCollector, MessageEmbed} = require("discord.js");
-const embed = require("../helpers/embed.js");
-const anime = require("../helpers/anime.js");
-const button = require("../helpers/buttons.js");
-const chart = require("../helpers/chart.js");
+const embed = require("../utils/embed.js");
+const anime = require("../utils/anime.js");
+const button = require("../utils/buttons.js");
+const chart = require("../utils/chart.js");
 const path = require("path");
 
 // Databases
-const dbAnime = require("../databaseHelpers/anime.js");
-const dbInteractions = require("../databaseHelpers/messageInteractions.js");
+const dbAnime = require("../databaseUtils/anime.js");
+const dbInteractions = require("../databaseUtils/messageInteractions.js");
 
 function trailerParse(data) {
   if (data == null) {

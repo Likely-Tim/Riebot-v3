@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const file = require("./helpers/file.js");
+const file = require("./utils/file.js");
 
 // Routing
 const arknights = require("./routes/arknights.js");
@@ -38,17 +38,17 @@ app.get("/log", (request, response) => {
 
 app.get("/spotify_data", (request, response) => {
   const fileArray = file.lineArray("./web/saved/spotify.txt");
-  response.send({ id: fileArray });
+  response.send({id: fileArray});
 });
 
 app.get("/youtube_data", (request, response) => {
   const fileArray = file.lineArray("./web/saved/youtube.txt");
-  response.send({ id: fileArray });
+  response.send({id: fileArray});
 });
 
 app.get("/log_data", (request, response) => {
   const fileArray = file.lineArray("./web/saved/command_log.txt");
-  response.send({ log: fileArray });
+  response.send({log: fileArray});
 });
 
 app.all("*", (request, response) => {

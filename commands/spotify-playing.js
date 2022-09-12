@@ -1,11 +1,11 @@
 const fs = require("fs");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {InteractionCollector} = require("discord.js");
-const spotify = require("../helpers/spotify.js");
-const button = require("../helpers/buttons.js");
+const spotify = require("../utils/spotify.js");
+const button = require("../utils/buttons.js");
 
 // Databases
-const dbInteractions = require("../databaseHelpers/messageInteractions.js");
+const dbInteractions = require("../databaseUtils/messageInteractions.js");
 
 async function disablePrevious(client, newMessage) {
   try {

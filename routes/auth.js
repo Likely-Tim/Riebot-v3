@@ -4,7 +4,7 @@ const fetch = require("node-fetch");
 const crypto = require("crypto");
 
 // Databases
-const dbToken = require("../databaseHelpers/tokens.js");
+const dbToken = require("../databaseUtils/tokens.js");
 
 const SPOTIFY_ID = process.env.SPOTIFY_ID;
 const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
@@ -21,23 +21,15 @@ router.get("/", async (request, response) => {
     const state = generatePKCECodeVerifier();
     await dbToken.put("malState", state);
     if (!LOCAL_SERVER) {
-      response.redirect(
-        `https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${MAL_ID}&state=${state}&redirect_uri=http://44.242.76.174/auth/mal&code_challenge=${codeVerifier}&code_challenge_method=plain`
-      );
+      response.redirect(`https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${MAL_ID}&state=${state}&redirect_uri=http://44.242.76.174/auth/mal&code_challenge=${codeVerifier}&code_challenge_method=plain`);
     } else {
-      response.redirect(
-        `https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${MAL_ID}&state=${state}&redirect_uri=http://localhost:3000/auth/mal&code_challenge=${codeVerifier}&code_challenge_method=plain`
-      );
+      response.redirect(`https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${MAL_ID}&state=${state}&redirect_uri=http://localhost:3000/auth/mal&code_challenge=${codeVerifier}&code_challenge_method=plain`);
     }
   } else if (request.query.type == "spotify") {
     if (!LOCAL_SERVER) {
-      response.redirect(
-        "https://accounts.spotify.com/en/authorize?client_id=ea2c1c3ca31d409db90f288951542b67&response_type=code&redirect_uri=http:%2F%2F44.242.76.174%2Fauth%2Fspotify&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true"
-      );
+      response.redirect("https://accounts.spotify.com/en/authorize?client_id=ea2c1c3ca31d409db90f288951542b67&response_type=code&redirect_uri=http:%2F%2F44.242.76.174%2Fauth%2Fspotify&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true");
     } else {
-      response.redirect(
-        "https://accounts.spotify.com/en/authorize?client_id=ea2c1c3ca31d409db90f288951542b67&response_type=code&redirect_uri=http:%2F%2Flocalhost:3000%2Fauth%2Fspotify&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true"
-      );
+      response.redirect("https://accounts.spotify.com/en/authorize?client_id=ea2c1c3ca31d409db90f288951542b67&response_type=code&redirect_uri=http:%2F%2Flocalhost:3000%2Fauth%2Fspotify&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true");
     }
   } else {
     response.redirect("/");
@@ -74,9 +66,7 @@ async function spotifyAccepted(code) {
   if (LOCAL_SERVER) {
     redirect_uri = "http://localhost:3000/auth/spotify";
   }
-  const authorization = Buffer.from(SPOTIFY_ID + ":" + SPOTIFY_SECRET).toString(
-    "base64"
-  );
+  const authorization = Buffer.from(SPOTIFY_ID + ":" + SPOTIFY_SECRET).toString("base64");
   const data = {
     code: code,
     redirect_uri: redirect_uri,
@@ -115,7 +105,7 @@ async function malAccepted(code) {
   };
   let response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
     body: new URLSearchParams(data),
   });
   if (response.status != 200) {
