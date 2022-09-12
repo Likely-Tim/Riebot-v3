@@ -1,5 +1,3 @@
-const Keyv = require("keyv");
-const {KeyvFile} = require("keyv-file");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {InteractionCollector} = require("discord.js");
 const spotify = require("../helpers/spotify.js");
@@ -7,36 +5,29 @@ const button = require("../helpers/buttons.js");
 
 // Databases
 const dbInteractions = require("../databaseHelpers/messageInteractions.js");
-
-const db = new Keyv({
-  store: new KeyvFile({
-    filename: "storage/spotify-top.json",
-    encode: JSON.stringify,
-    decode: JSON.parse,
-  }),
-});
+const dbSpotify = require("../databaseHelpers/spotify-top.js");
 
 function responseParse(input) {
   input = input.items;
   const length = input.length;
-  db.set("spotify-top_length", length);
-  db.set("spotify-top_index", 0);
+  dbSpotify.put("spotify-top_length", length);
+  dbSpotify.put("spotify-top_index", 0);
   for (let i = 0; i < length; i++) {
-    db.set("spotify-top_" + i, input[i].external_urls.spotify);
+    dbSpotify.put(`spotify-top_${i}`, input[i].external_urls.spotify);
   }
   return [input[0].external_urls.spotify, length];
 }
 
 async function contentRetrieve(action) {
-  const length = await db.get("spotify-top_length");
-  let index = await db.get("spotify-top_index");
+  const length = await dbSpotify.get("spotify-top_length");
+  let index = await dbSpotify.get("spotify-top_index");
   if (action == "next") {
-    index += 1;
+    index++;
   } else if (action == "prev") {
-    index -= 1;
+    index--;
   }
-  db.set("spotify-top_index", index);
-  const content = await db.get("spotify-top_" + index);
+  dbSpotify.put("spotify-top_index", index);
+  const content = await dbSpotify.get(`spotify-top_${index}`);
   let buttons = [];
   if (index == length - 1) {
     buttons = [button.actionRow(["prev", "disabled_next"])];
@@ -84,9 +75,9 @@ module.exports = {
         .setDescription("Time Length (Short Term: 1 month, Medium Term: 6 month, Long Term: From Beginning)")
         .setRequired(true)
         .addChoices([
-          ["short_term", "short_term"],
-          ["medium_term", "medium_term"],
-          ["long_term", "long_term"],
+          ["short term", "short_term"],
+          ["medium term", "medium_term"],
+          ["long term", "long_term"],
         ])
     ),
 
@@ -94,12 +85,12 @@ module.exports = {
     const type = interaction.options.getString("type");
     const time = interaction.options.getString("time");
     const response = await spotify.topPlayed(type, time);
-    const result = responseParse(response);
+    const [spotifyUrl, length] = responseParse(response);
     let components = [button.actionRow(["disabled_prev", "next"])];
-    if (result[1] == 1) {
+    if (length == 1) {
       components = [button.actionRow(["disabled_prev", "disabled_next"])];
     }
-    await interaction.reply({content: result[0], components});
+    await interaction.reply({content: spotifyUrl, components});
 
     const message = await interaction.fetchReply();
     await disablePrevious(client, message);

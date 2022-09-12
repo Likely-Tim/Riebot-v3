@@ -15,7 +15,6 @@ const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
 const file = require("./helpers/file.js");
-const {tttButtonInteraction} = require("./commands/ttt.js");
 
 // Databases
 const dbInteractions = require("./databaseHelpers/messageInteractions.js");
@@ -141,7 +140,6 @@ function messageMapper() {
   map.set("anime-show", animeShowButtonInteraction);
   map.set("anime-showSearch", animeSearchInteraction);
   map.set("anime-va", animeVAButtonInteraction);
-  map.set("ttt", tttButtonInteraction);
   return map;
 }
 
