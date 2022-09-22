@@ -16,7 +16,6 @@
     "level": "^8.0.0",
     "n-readlines": "^1.0.1",
     "node-fetch": "^2.6.1",
-    "pg": "^8.7.3",
     "prepend-file": "^2.0.1",
     "puppeteer": "^16.0.0"
   },

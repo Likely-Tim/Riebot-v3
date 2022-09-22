@@ -3,13 +3,11 @@ const app = express();
 const file = require("./utils/file.js");
 
 // Routing
-const arknights = require("./routes/arknights.js");
 const auth = require("./routes/auth.js");
 
 app.use(express.json());
 app.use(express.static("web"));
 
-app.use("/arknights", arknights);
 app.use("/auth", auth);
 
 app.all("/", (request, response) => {
