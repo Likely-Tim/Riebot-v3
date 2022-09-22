@@ -1,4 +1,6 @@
 .env
 node_modules
-databases
-media/animeShow.png
+databases/*
+!databases/placeholder.txt
+media/*
+!media/VisualCrossingIcons
