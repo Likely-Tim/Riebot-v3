@@ -1,24 +1,15 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
-const {InteractionCollector, MessageEmbed} = require("discord.js");
-const embed = require("../utils/embed.js");
-const anime = require("../utils/anime.js");
-const button = require("../utils/buttons.js");
-const chart = require("../utils/chart.js");
+const {InteractionCollector} = require("discord.js");
+const {logger} = require("../utils/logger");
+const embed = require("../utils/embed");
+const anime = require("../utils/anime");
+const button = require("../utils/buttons");
+const chart = require("../utils/chart");
 const path = require("path");
 
 // Databases
-const dbAnime = require("../databaseUtils/anime.js");
-const dbInteractions = require("../databaseUtils/messageInteractions.js");
-
-function trailerParse(data) {
-  if (data == null) {
-    return null;
-  } else if (data.site == "youtube") {
-    return "https://youtu.be/" + data.id;
-  } else if (data.site == "dailymotion") {
-    return "https://dai.ly/" + data.id;
-  }
-}
+const dbAnime = require("../databaseUtils/anime");
+const dbInteractions = require("../databaseUtils/messageInteractions");
 
 async function saveVaCharacters(characters) {
   dbAnime.put("vaCharacterLength", characters.length);
@@ -91,6 +82,7 @@ module.exports = {
     await interaction.deferReply();
     const type = interaction.options.getString("type");
     const query = interaction.options.getString("query");
+    logger.info(`[Command] Anime | Type: ${type} | Query: ${query}`);
 
     switch (type) {
       case "show": {
@@ -104,7 +96,7 @@ module.exports = {
         const message = await interaction.fetchReply();
         disablePrevious(client, message, `${type}Search`);
         animeSearchInteraction(client, message, type);
-        return `${type}_${query}`;
+        return;
       }
 
       case "va": {
@@ -121,13 +113,14 @@ module.exports = {
         const message = await interaction.fetchReply();
         disablePrevious(client, message, type);
         animeVAButtonInteraction(client, message);
-        return `${type}_${query}`;
+        return;
       }
     }
   },
 };
 
 function animeSearchInteraction(client, message, type) {
+  logger.info(`[Collector] Anime Search Message ID: ${message.id}`);
   const collector = new InteractionCollector(client, {message});
   collector.on("collect", async (interaction) => {
     interaction.deferReply();
@@ -166,6 +159,7 @@ function animeSearchInteraction(client, message, type) {
 }
 
 function animeShowButtonInteraction(client, message) {
+  logger.info(`[Collector] Anime Show Message ID: ${message.id}`);
   const collector = new InteractionCollector(client, {message});
   collector.on("collect", async (press) => {
     const messageActionRows = press.message.components;
@@ -185,6 +179,7 @@ function animeShowButtonInteraction(client, message) {
 }
 
 function animeVAButtonInteraction(client, message) {
+  logger.info(`[Collector] Anime VA Message ID: ${message.id}`);
   const collector = new InteractionCollector(client, {message: message, componentType: "BUTTON"});
   collector.on("collect", async (press) => {
     const name = await dbAnime.get("vaName");

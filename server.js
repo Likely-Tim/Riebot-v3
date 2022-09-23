@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const {logger} = require("./utils/logger.js");
 const file = require("./utils/file.js");
 
 // Routing
@@ -53,10 +54,10 @@ app.all("*", (request, response) => {
   response.sendFile(__dirname + "/docs" + request.url);
 });
 
-function keepAlive() {
+function initializeServer() {
   app.listen(process.env.PORT || 3000, () => {
-    console.log("Server is ready.");
+    logger.info("Server initialized");
   });
 }
 
-module.exports = keepAlive;
+module.exports = initializeServer;

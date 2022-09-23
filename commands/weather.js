@@ -2,6 +2,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const fetch = require("node-fetch");
 const path = require("path");
 const {MessageEmbed} = require("discord.js");
+const {logger} = require("../utils/logger");
 
 const apiKey = process.env.VISUAL_CROSSING_KEY;
 
@@ -50,6 +51,7 @@ module.exports = {
     .addStringOption((option) => option.setName("location").setDescription("Where").setRequired(true)),
   async execute(client, interaction) {
     const location = interaction.options.getString("location");
+    logger.info(`[Command] Weather | Location: ${location}`);
     const data = await sendGetRequest(location);
     const embed = await buildEmbed(data);
     interaction.reply({embeds: [embed], files: [{attachment: path.join(__dirname, `../media/VisualCrossingIcons/${data.currentConditions.icon}.png`), name: "weather.png"}]});

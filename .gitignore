@@ -4,3 +4,4 @@ databases/*
 !databases/placeholder.txt
 media/*
 !media/VisualCrossingIcons
+logs

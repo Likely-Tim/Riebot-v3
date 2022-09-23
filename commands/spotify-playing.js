@@ -6,6 +6,7 @@ const button = require("../utils/buttons.js");
 
 // Databases
 const dbInteractions = require("../databaseUtils/messageInteractions.js");
+const {logger} = require("../utils/logger.js");
 
 async function disablePrevious(client, newMessage) {
   try {
@@ -27,6 +28,7 @@ module.exports = {
   data: new SlashCommandBuilder().setName("spotify-playing").setDescription("What is currently playing?"),
 
   async execute(client, interaction) {
+    logger.info(`[Command] Spotify Playing`);
     const response = await spotify.currentlyPlaying(false);
     await interaction.reply({
       content: response,
@@ -40,6 +42,7 @@ module.exports = {
 };
 
 function spotifyPlayingButtonInteraction(client, message) {
+  logger.info(`[Collector] Spotify Playing Message ID: ${message.id}`);
   const collector = new InteractionCollector(client, {
     message,
     componentType: "BUTTON",

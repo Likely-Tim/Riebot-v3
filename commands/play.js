@@ -1,4 +1,5 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
+const {logger} = require("../utils/logger.js");
 const voice = require("../utils/voice.js");
 
 module.exports = {
@@ -29,6 +30,7 @@ module.exports = {
     await voice.joinChannel(interaction.member.voice.channelId);
     const task = interaction.options.getString("task");
     const query = interaction.options.getString("query");
+    logger.info(`[Command] Play | Task: ${task} | Query: ${query}`);
 
     switch (task) {
       case "song_link": {

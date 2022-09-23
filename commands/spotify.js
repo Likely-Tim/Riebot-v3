@@ -6,6 +6,7 @@ const button = require("../utils/buttons.js");
 // Databases
 const dbSpotify = require("../databaseUtils/spotify.js");
 const dbInteractions = require("../databaseUtils/messageInteractions.js");
+const {logger} = require("../utils/logger.js");
 
 async function responseParse(response, type) {
   let length = 0;
@@ -102,6 +103,7 @@ module.exports = {
   async execute(client, interaction) {
     const type = interaction.options.getString("type");
     const query = interaction.options.getString("query");
+    logger.info(`[Command] Spotify | Type: ${type} | Query: ${query}`);
     const response = await spotify.search(type, query);
     const result = await responseParse(response, type);
     const components = [];
@@ -122,6 +124,7 @@ module.exports = {
 };
 
 function spotifyButtonInteraction(client, message, type) {
+  logger.info(`[Collector] Spotify Message ID: ${message.id} for ${type}`);
   const collector = new InteractionCollector(client, {
     message,
     componentType: "BUTTON",

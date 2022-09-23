@@ -1,6 +1,7 @@
 const {ChartJSNodeCanvas} = require("chartjs-node-canvas");
 const fs = require("fs");
 const path = require("path");
+const {logger} = require("./logger");
 
 const width = 1500;
 const height = 600;
@@ -57,9 +58,9 @@ async function generateLineChart(title, labels, data) {
 
 function callback(err) {
   if (err) {
-    console.log(err);
+    logger.error(err);
   } else {
-    console.log("Chart Created Successful");
+    logger.info("[Chart] Chart Created");
   }
 }
 module.exports.generateLineChart = generateLineChart;

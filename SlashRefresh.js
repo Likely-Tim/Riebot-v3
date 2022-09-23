@@ -1,4 +1,5 @@
 const fs = require("fs");
+const {logger} = require("./utils/logger.js");
 const {REST} = require("@discordjs/rest");
 const {Routes} = require("discord-api-types/v9");
 
@@ -19,15 +20,15 @@ function refreshSlashCommands() {
 
   (async () => {
     try {
-      console.log("Started refreshing application (/) commands.");
+      logger.info("Started refreshing application (/) commands");
 
       await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
         body: commands,
       });
 
-      console.log("Successfully reloaded application (/) commands.");
+      logger.info("Successfully reloaded application (/) commands");
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
   })();
 }

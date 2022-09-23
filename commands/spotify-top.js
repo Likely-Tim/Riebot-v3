@@ -6,6 +6,7 @@ const button = require("../utils/buttons.js");
 // Databases
 const dbInteractions = require("../databaseUtils/messageInteractions.js");
 const dbSpotify = require("../databaseUtils/spotify-top.js");
+const {logger} = require("../utils/logger.js");
 
 function responseParse(input) {
   input = input.items;
@@ -84,6 +85,7 @@ module.exports = {
   async execute(client, interaction) {
     const type = interaction.options.getString("type");
     const time = interaction.options.getString("time");
+    logger.info(`[Command] Spotify Top | Type: ${type} | Time: ${time}`);
     const response = await spotify.topPlayed(type, time);
     const [spotifyUrl, length] = responseParse(response);
     let components = [button.actionRow(["disabled_prev", "next"])];
@@ -100,6 +102,7 @@ module.exports = {
 };
 
 function spotifyTopButtonInteraction(client, message) {
+  logger.info(`[Collector] Spotify Top Message ID: ${message.id}`);
   const collector = new InteractionCollector(client, {
     message,
     componentType: "BUTTON",

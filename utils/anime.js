@@ -1,9 +1,10 @@
 const fetch = require("node-fetch");
+const {logger} = require("./logger");
 
 const MALID = process.env.MAL_ID;
 const MALSecret = process.env.MAL_SECRET;
 
-const dbToken = require("../databaseUtils/tokens.js");
+const dbToken = require("../databaseUtils/tokens");
 
 function queryCreate(args) {
   const query = args.join("+");
@@ -11,6 +12,7 @@ function queryCreate(args) {
 }
 
 async function malRefreshToken() {
+  logger.info("[Anime] Refreshing MAL Token");
   const url = "https://myanimelist.net/v1/oauth2/token";
   const refreshToken = await dbToken.get("malRefresh");
   const data = {
@@ -24,38 +26,14 @@ async function malRefreshToken() {
     headers: {"Content-Type": "application/x-www-form-urlencoded"},
     body: new URLSearchParams(data),
   });
+  logger.info(`[Anime] Refreshing Token Status: ${response.status}`);
   response = await response.json();
   await dbToken.put("malAccess", response.access_token);
   await dbToken.put("malRefresh", response.refresh_token);
 }
 
-async function malShow(query) {
-  query = queryCreate(query.split(" "));
-  let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=1&nsfw=true`;
-  const accessToken = await dbToken.get("malAccess");
-  const authorization = "Bearer " + accessToken;
-  let response = await fetch(url, {
-    method: "GET",
-    headers: {Authorization: authorization},
-  });
-  if (response.status == 400) {
-    return "No show found!";
-  }
-  if (response.status == 401) {
-    await malRefreshToken();
-    return await malShow(query);
-  }
-  response = await response.json();
-  const id = response.data[0].node.id;
-  url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
-  response = await fetch(url, {
-    method: "GET",
-    headers: {Authorization: authorization},
-  });
-  return response.json();
-}
-
 async function malShowSearch(query) {
+  logger.info(`[Anime] Searching for MAL show "${query}"`);
   query = queryCreate(query.split(" "));
   let url = `https://api.myanimelist.net/v2/anime?q=${query}&limit=20&nsfw=true`;
   const accessToken = await dbToken.get("malAccess");
@@ -64,17 +42,19 @@ async function malShowSearch(query) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Anime] MAL Show Search Status: ${response.status}`);
   if (response.status == 400) {
     return "No show found!";
   }
   if (response.status == 401) {
     await malRefreshToken();
-    return await malShow(query);
+    return await malShowSearch(query);
   }
   return await response.json();
 }
 
 async function malShowId(id) {
+  logger.info(`[Anime] Searching for MAL Show ID: ${id}`);
   const url = `https://api.myanimelist.net/v2/anime/${id}?fields=synopsis,opening_themes,ending_themes,mean,studio,status,num_episodes,rank,studios`;
   const accessToken = await dbToken.get("malAccess");
   const authorization = "Bearer " + accessToken;
@@ -82,6 +62,7 @@ async function malShowId(id) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Anime] MAL ID Search Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
@@ -95,6 +76,7 @@ async function malShowId(id) {
 }
 
 async function anilistVa(query) {
+  logger.info(`[Anime] Searching for Anilist VA "${query}"`);
   const search = `
     query {
       Staff (search: "${query}") { 
@@ -141,7 +123,6 @@ async function anilistVa(query) {
       }
     }
     `;
-
   const url = "https://graphql.anilist.co";
   let response = await fetch(url, {
     method: "POST",
@@ -153,61 +134,13 @@ async function anilistVa(query) {
       query: search,
     }),
   });
+  logger.info(`[Anime] Anilist VA Search Status: ${response.status}`);
   response = await response.json();
   return response.data.Staff;
 }
 
-async function anilistShow(query) {
-  const search = `
-    query {
-      Media (search: "${query}", type: ANIME, sort: [FORMAT, SEARCH_MATCH]) { 
-        idMal
-        title {
-          romaji
-          english
-        }
-        description
-        episodes
-        meanScore
-        rankings {
-          rank
-          allTime
-          type
-        }
-        status
-        siteUrl
-        trailer {
-          id
-          site
-        }
-        coverImage {
-          extraLarge
-        }
-        studios {
-          nodes {
-            name
-            isAnimationStudio
-          }
-        }
-      }
-    }
-    `;
-  const url = "https://graphql.anilist.co";
-  let response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      query: search,
-    }),
-  });
-  response = await response.json();
-  return response.data.Media;
-}
-
 async function anilistAiringTrend(malId) {
+  logger.info(`[Anime] Searching for Airing Trend for MAL ID: ${malId}`);
   const search = `
     query {
       Media(idMal: ${malId}, type: ANIME) {
@@ -237,11 +170,13 @@ async function anilistAiringTrend(malId) {
       query: search,
     }),
   });
+  logger.info(`[Anime] Anilist Airing Trend Response Status: ${response.status}`);
   response = await response.json();
   return response.data.Media;
 }
 
 async function anithemeSearchMalId(malId) {
+  logger.info(`[Anime] Searching Anithemes for MAL ID: ${malId}`);
   const url = `https://api.animethemes.moe/anime?&include=images,resources,animethemes.song.artists,animethemes.animethemeentries.videos&fields[anime]=name&fields[animetheme]=type&fields[song]=title&fields[artist]=name&fields[animethemeentry]=episodes&fields[video]=link&filter[has]=resources&filter[site]=MyAnimeList&filter[external_id]=${malId}`;
   let response = await fetch(url, {
     method: "GET",
@@ -249,6 +184,7 @@ async function anithemeSearchMalId(malId) {
       Accept: "application/json",
     },
   });
+  logger.info(`[Anime] Anithemes Response Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else {
@@ -257,8 +193,6 @@ async function anithemeSearchMalId(malId) {
 }
 
 module.exports.anilistVa = anilistVa;
-module.exports.anilistShow = anilistShow;
-module.exports.malShow = malShow;
 module.exports.malShowId = malShowId;
 module.exports.anithemeSearchMalId = anithemeSearchMalId;
 module.exports.anilistAiringTrend = anilistAiringTrend;

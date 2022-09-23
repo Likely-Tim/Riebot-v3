@@ -17,7 +17,9 @@
     "n-readlines": "^1.0.1",
     "node-fetch": "^2.6.1",
     "prepend-file": "^2.0.1",
-    "puppeteer": "^16.0.0"
+    "puppeteer": "^16.0.0",
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "overrides": {
     "@discordjs/opus": "^0.8.0"

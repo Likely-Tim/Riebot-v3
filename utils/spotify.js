@@ -3,8 +3,9 @@
  */
 
 const fetch = require("node-fetch");
+const {logger} = require("./logger");
 
-const dbToken = require("../databaseUtils/tokens.js");
+const dbToken = require("../databaseUtils/tokens");
 
 const SPOTIFY_ID = process.env.SPOTIFY_ID;
 const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
@@ -15,6 +16,7 @@ const SPOTIFY_SECRET = process.env.SPOTIFY_SECRET;
  * @return {Promise<boolean>} Boolean if successful or not
  */
 async function refreshToken() {
+  logger.info(`[Spotify] Refreshing Token`);
   const refreshToken = await dbToken.get("spotifyRefresh");
   const url = "https://accounts.spotify.com/api/token";
   const data = {
@@ -28,12 +30,12 @@ async function refreshToken() {
     headers: {"Content-Type": "application/x-www-form-urlencoded"},
     body: new URLSearchParams(data),
   });
+  logger.info(`[Spotify] Refreshing Token Status: ${response.status}`);
   if (response.status != 200) {
     return false;
   }
   response = await response.json();
   await dbToken.put("spotifyAccess", response.access_token);
-  console.log("Refreshed Spotify Creds");
   return true;
 }
 
@@ -45,6 +47,7 @@ async function refreshToken() {
  * @return {Promise<object>} Search Response
  */
 async function search(type, query) {
+  logger.info(`[Spotify] Searching for "${query}" ${type}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=5`;
   const authorization = "Bearer " + accessToken;
@@ -52,6 +55,7 @@ async function search(type, query) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Search Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
@@ -69,6 +73,7 @@ async function search(type, query) {
  * @return {Promise<string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
+  logger.info(`[Spotify] Getting playing track URI: ${uri}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const url = "https://api.spotify.com/v1/me/player/currently-playing";
   const authorization = "Bearer " + accessToken;
@@ -76,6 +81,7 @@ async function currentlyPlaying(uri) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Playing Track Status: ${response.status}`);
   if (response.status == 200) {
     response = await response.json();
     if (response.currently_playing_type == "ad") {
@@ -102,6 +108,7 @@ async function currentlyPlaying(uri) {
  * @return {boolean} Successful or not
  */
 async function playlistAddPlaying(playlistId) {
+  logger.info(`[Spotify] Adding playing track to ${playlistId}`);
   const uri = await currentlyPlaying(true);
   if (!uri.startsWith("spotify:track:")) {
     return false;
@@ -113,6 +120,7 @@ async function playlistAddPlaying(playlistId) {
     method: "POST",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Adding Playing Track Status: ${response.status}`);
   if (response.status == 201) {
     return true;
   } else if (response.status == 401) {
@@ -131,6 +139,7 @@ async function playlistAddPlaying(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function topPlayed(type, period) {
+  logger.info(`[Spotify] Getting top played ${type} for ${period}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
   const authorization = "Bearer " + accessToken;
@@ -138,6 +147,7 @@ async function topPlayed(type, period) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Getting Top Played Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
@@ -155,6 +165,7 @@ async function topPlayed(type, period) {
  * @return {Promise<object>} Spotify Result
  */
 async function getPlaylist(playlistId) {
+  logger.info(`[Spotify] Getting Playlist ${playlistId}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/`;
   const authorization = "Bearer " + accessToken;
@@ -162,6 +173,7 @@ async function getPlaylist(playlistId) {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Getting Playlist Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
@@ -179,12 +191,14 @@ async function getPlaylist(playlistId) {
  * @return {Promise<object>} Spotify Results
  */
 async function nextPage(url) {
+  logger.info(`[Spotify] Getting next page of data from ${url}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Next Page Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
@@ -203,6 +217,7 @@ async function nextPage(url) {
  * @return {Promise<object>} Spotify Playlist
  */
 async function createPlaylist(name, isPublic) {
+  logger.info(`[Spotify] Creating Playlist called ${name} | Public: ${isPublic}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = "https://api.spotify.com/v1/users/fhusion/playlists";
@@ -212,6 +227,7 @@ async function createPlaylist(name, isPublic) {
     headers: {Authorization: authorization},
     body: JSON.stringify(data),
   });
+  logger.info(`[Spotify] Playlist Creatioin Status: ${response.status}`);
   if (response.status == 201) {
     return await response.json();
   } else if (response.status == 401) {
@@ -230,6 +246,7 @@ async function createPlaylist(name, isPublic) {
  * @return {Promise<boolean>} Successful or not
  */
 async function addItemsToPlaylist(playlistId, uriArray) {
+  logger.info(`[Spotify] Adding uris ${uriArray} to playlist ${playlistId}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
@@ -239,6 +256,7 @@ async function addItemsToPlaylist(playlistId, uriArray) {
     headers: {Authorization: authorization},
     body: JSON.stringify(data),
   });
+  logger.info(`[Spotify] Adding Status: ${response.status}`);
   if (response.status == 201) {
     return true;
   } else if (response.status == 401) {
@@ -256,6 +274,7 @@ async function addItemsToPlaylist(playlistId, uriArray) {
  * @return {boolean} Successful or not
  */
 async function unfollowPlaylist(playlistId) {
+  logger.info(`[Spotify] Deleting Playlist ${playlistId}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
@@ -263,6 +282,7 @@ async function unfollowPlaylist(playlistId) {
     method: "DELETE",
     headers: {Authorization: authorization},
   });
+  logger.info(`[Spotify] Deleting Playlist Status: ${response.status}`);
   if (response.status == 200) {
     return true;
   } else if (response.status == 401) {
@@ -280,6 +300,7 @@ async function unfollowPlaylist(playlistId) {
  * @return {Array<string>} Array of Playlist IDs
  */
 async function voiceTempPlaylist(playlist) {
+  logger.info(`[Spotify] Creating a temporary playlist`);
   const tempPlaylistIds = [];
   let uriArray = [];
   let tempPlaylist = await createPlaylist("Temp", false);

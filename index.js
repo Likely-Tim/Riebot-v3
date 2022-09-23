@@ -1,15 +1,21 @@
 require("dotenv").config();
 const fs = require("fs");
-const keepAlive = require("./server");
+const initializeServer = require("./server.js");
+const {logger, startUpLogger} = require("./utils/logger.js");
 const refreshSlashCommands = require("./SlashRefresh");
+
+// Discord JS
 const {Client, Collection, Intents} = require("discord.js");
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
 });
+
+// Discord music player
 const {Player} = require("discord-music-player");
 const player = new Player(client);
 client.player = player;
 
+// Reinitialize old command interactions
 const {spotifyButtonInteraction} = require("./commands/spotify.js");
 const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js");
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
@@ -19,6 +25,7 @@ const file = require("./utils/file.js");
 // Databases
 const dbInteractions = require("./databaseUtils/messageInteractions.js");
 
+startUpLogger.info("Start Up");
 refreshSlashCommands();
 client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".js"));
@@ -28,28 +35,27 @@ for (const file of commandFiles) {
   client.commands.set(command.data.name, command);
 }
 
-client.once("ready", () => {
-  const logStartPromise = logStartUp();
-  const initializingPromise = reinitializeMessages(client);
-  Promise.all([logStartPromise, initializingPromise])
-    .then(() => {
-      console.log("Ready!");
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+client.once("ready", async () => {
+  logger.info("Discord Client Starting Up");
+  await reinitializePreviousCommands(client);
+  logger.info("Discord Client Ready");
 });
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
+  // Interaction is not a command
+  if (!interaction.isCommand()) {
+    return;
+  }
+  // Check if Riebot-v3's command
   const {commandName, user} = interaction;
-  if (!client.commands.has(commandName)) return;
-
+  if (!client.commands.has(commandName)) {
+    return;
+  }
+  // Execute Riebot-v3 command
   try {
-    const query = await client.commands.get(commandName).execute(client, interaction);
-    file.prepend("./web/saved/command_log.txt", `${user.username}#${user.discriminator},${commandName},${query}\n`);
+    await client.commands.get(commandName).execute(client, interaction);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return interaction.reply({
       content: "There was an error while executing this command!",
     });
@@ -96,16 +102,17 @@ client.on("messageCreate", async (message) => {
 });
 
 // client.on('debug', console.log);
-keepAlive();
+initializeServer();
 client.login(process.env.DISCORD_TOKEN);
 
-// / ///////////////////////////////////////
-// / //////// HELPER FUNCTIONS /////////////
-// / ///////////////////////////////////////
+//////////////////////////////////////////
+/////////// HELPER FUNCTIONS /////////////
+//////////////////////////////////////////
 
-async function reinitializeMessages(client) {
+async function reinitializePreviousCommands(client) {
+  logger.info("Reinitializing Previous Commands");
   const promises = [];
-  const functionMap = messageMapper();
+  const functionMap = commandFunctionMapper();
   for (const key of functionMap.keys()) {
     const channel = dbInteractions.get(key + "_channelId");
     const message = dbInteractions.get(key + "_messageId");
@@ -114,6 +121,7 @@ async function reinitializeMessages(client) {
     promises.push(promise);
   }
   await Promise.all(promises);
+  logger.info("Finished Reinitializing Previous Commands");
 }
 
 async function buttonInteractions(client, channelId, messageId, initializer, key) {
@@ -126,11 +134,11 @@ async function buttonInteractions(client, channelId, messageId, initializer, key
       initializer(client, message);
     }
   } catch (error) {
-    console.log(`[${key}] Could not find previous message.`);
+    logger.info(`[${key}] Could not find previous message.`);
   }
 }
 
-function messageMapper() {
+function commandFunctionMapper() {
   const map = new Map();
   map.set("spotify-artist", spotifyButtonInteraction);
   map.set("spotify-track", spotifyButtonInteraction);
@@ -141,25 +149,4 @@ function messageMapper() {
   map.set("anime-showSearch", animeSearchInteraction);
   map.set("anime-va", animeVAButtonInteraction);
   return map;
-}
-
-async function logStartUp() {
-  const options = {
-    timezone: "America/Los_Angeles",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  };
-  let time = new Date().getTime();
-  time -= 3600000 * 7;
-  fs.writeFile("StartUpTime.txt", new Date(time).toLocaleString("en-US", options) + "\n", {flag: "a+"}, consoleError);
-}
-
-function consoleError(err) {
-  if (err) {
-    throw err;
-  }
 }

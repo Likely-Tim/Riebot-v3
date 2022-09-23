@@ -1,10 +1,12 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
+const {logger} = require("../utils/logger.js");
 const spotify = require("../utils/spotify.js");
 const sleep = require("util").promisify(setTimeout);
 
 module.exports = {
   data: new SlashCommandBuilder().setName("playlist-add").setDescription("Add to the playlist"),
   async execute(client, interaction) {
+    logger.info(`[Command] Playlist Add`);
     if (interaction.user.id != 332923810099494913n) {
       await interaction.reply(":)");
       return;
