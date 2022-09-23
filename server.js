@@ -1,15 +1,17 @@
 const express = require("express");
 const app = express();
-const {logger} = require("./utils/logger.js");
-const file = require("./utils/file.js");
+const {logger} = require("./utils/logger");
+const file = require("./utils/file");
 
 // Routing
-const auth = require("./routes/auth.js");
+const auth = require("./routes/auth");
+const logs = require("./routes/logs");
 
 app.use(express.json());
 app.use(express.static("web"));
 
 app.use("/auth", auth);
+app.use("/logs", logs);
 
 app.all("/", (request, response) => {
   response.sendFile(__dirname + "/web/html/index.html");
@@ -31,10 +33,6 @@ app.get("/youtube", (request, response) => {
   response.sendFile(__dirname + "/web/html/youtube.html");
 });
 
-app.get("/log", (request, response) => {
-  response.sendFile(__dirname + "/web/html/log.html");
-});
-
 app.get("/spotify_data", (request, response) => {
   const fileArray = file.lineArray("./web/saved/spotify.txt");
   response.send({id: fileArray});
@@ -43,11 +41,6 @@ app.get("/spotify_data", (request, response) => {
 app.get("/youtube_data", (request, response) => {
   const fileArray = file.lineArray("./web/saved/youtube.txt");
   response.send({id: fileArray});
-});
-
-app.get("/log_data", (request, response) => {
-  const fileArray = file.lineArray("./web/saved/command_log.txt");
-  response.send({log: fileArray});
 });
 
 app.all("*", (request, response) => {
