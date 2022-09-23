@@ -8,7 +8,7 @@ const height = 600;
 const backgroundColour = "#2e3035";
 const chartJSNodeCanvas = new ChartJSNodeCanvas({width, height, backgroundColour});
 
-async function generateLineChart(title, labels, data) {
+async function generateLineChart(title, labels, data, fileName) {
   const configuration = {
     type: "line",
     data: {
@@ -53,7 +53,7 @@ async function generateLineChart(title, labels, data) {
     },
   };
   const buffer = await chartJSNodeCanvas.renderToBuffer(configuration);
-  fs.writeFile(path.join(__dirname, "../media/animeShow.png"), buffer, "base64", callback);
+  fs.writeFile(path.join(__dirname, `../media/${fileName}.png`), buffer, "base64", callback);
 }
 
 function callback(err) {

@@ -129,27 +129,28 @@ function animeSearchInteraction(client, message, type) {
     let anithemeResponse = await anime.anithemeSearchMalId(id);
     let anilistResponse = await anime.anilistAiringTrend(id);
     const [airingTrendLabels, airingTrendData] = anilistAiringTrendParse(anilistResponse);
-    await chart.generateLineChart("Airing Score", airingTrendLabels, airingTrendData);
     const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
     dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
     const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
     dbAnime.putEmbed("malShowEmbed", malShowEmbed);
+    let components = [];
     let showButton = undefined;
     if (malShowEmbed.title) {
       showButton = button.changeLabel(button.returnButton("show"), malShowEmbed.title);
       showButton.disabled = true;
     }
-    let components = [];
     if (opEdEmbed) {
-      components.push(showButton);
       components.push("opEdSongs");
+    }
+    if (airingTrendLabels.length != 0 && airingTrendData.length != 0) {
+      await chart.generateLineChart("Airing Score", airingTrendLabels, airingTrendData, "animeShow");
       components.push("score");
+    }
+    if (components.length != 0) {
+      components.unshift(showButton);
       components = button.merge(components);
       await interaction.editReply({embeds: [malShowEmbed], components: [components]});
     } else {
-      components.push(showButton);
-      components.push("score");
-      components = button.merge(components);
       await interaction.editReply({embeds: [malShowEmbed]});
     }
     message = await interaction.fetchReply();

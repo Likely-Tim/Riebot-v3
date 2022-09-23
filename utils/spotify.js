@@ -73,7 +73,7 @@ async function search(type, query) {
  * @return {Promise<string>} URI or link of currently playing track
  */
 async function currentlyPlaying(uri) {
-  logger.info(`[Spotify] Getting playing track URI: ${uri}`);
+  logger.info(`[Spotify] Getting playing track | URI: ${uri}`);
   const accessToken = await dbToken.get("spotifyAccess");
   const url = "https://api.spotify.com/v1/me/player/currently-playing";
   const authorization = "Bearer " + accessToken;
