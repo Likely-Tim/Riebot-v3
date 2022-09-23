@@ -139,8 +139,8 @@ async function anilistVa(query) {
   return response.data.Staff;
 }
 
-async function anilistAiringTrend(malId) {
-  logger.info(`[Anime] Searching for Airing Trend for MAL ID: ${malId}`);
+async function anilistAiringTrend(malId, pageNum) {
+  logger.info(`[Anime] Searching for Airing Trend | MAL ID: ${malId} | Page: ${pageNum}`);
   const search = `
     query {
       Media(idMal: ${malId}, type: ANIME) {
@@ -149,7 +149,7 @@ async function anilistAiringTrend(malId) {
           english
           native
         }
-        trends(sort: [EPISODE_DESC], releasing: true) {
+        trends(sort: [EPISODE_DESC], releasing: true, page: ${pageNum}) {
           nodes {
             date
             averageScore

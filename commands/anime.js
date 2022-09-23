@@ -25,16 +25,28 @@ async function saveVaCharacters(characters) {
  * @param {Object} response - Anilist Airing Trend Response
  * @returns {Array} [Labels, Data]
  */
-function anilistAiringTrendParse(response) {
+async function anilistAiringTrendParse(response, malId, pageNum) {
   let nodes = response.trends.nodes;
   let data = [];
   let labels = [];
+  let nullEpisode = true;
   for (let i = 0; i < nodes.length; i++) {
     if (!nodes[i].episode) {
+      nullEpisode = true;
       break;
     }
-    data.unshift(nodes[i].averageScore);
-    labels.unshift(nodes[i].episode);
+    if (!labels.includes(nodes[i].episode)) {
+      nullEpisode = false;
+      data.unshift(nodes[i].averageScore);
+      labels.unshift(nodes[i].episode);
+    }
+  }
+  if (!nullEpisode) {
+    pageNum++;
+    let response = await anime.anilistAiringTrend(malId, pageNum);
+    let [tempLabel, tempData] = await anilistAiringTrendParse(response, malId, pageNum);
+    labels = tempLabel.concat(labels);
+    data = tempData.concat(data);
   }
   return [labels, data];
 }
@@ -127,8 +139,8 @@ function animeSearchInteraction(client, message, type) {
     const id = interaction.values[0];
     let malResponse = await anime.malShowId(id);
     let anithemeResponse = await anime.anithemeSearchMalId(id);
-    let anilistResponse = await anime.anilistAiringTrend(id);
-    const [airingTrendLabels, airingTrendData] = anilistAiringTrendParse(anilistResponse);
+    let anilistResponse = await anime.anilistAiringTrend(id, 1);
+    const [airingTrendLabels, airingTrendData] = await anilistAiringTrendParse(anilistResponse, id, 1);
     const opEdEmbed = embed.opEdEmbedsBuilder(anithemeResponse);
     dbAnime.putEmbed("showOpEdEmbed", opEdEmbed);
     const malShowEmbed = embed.showEmbedBuilderMal(malResponse);
