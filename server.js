@@ -21,10 +21,6 @@ app.all("/docs", (request, response) => {
   response.sendFile(__dirname + "/docs/index.html");
 });
 
-app.get("/buttons", (request, response) => {
-  response.sendFile(__dirname + "/web/html/buttons.html");
-});
-
 app.get("/spotify", (request, response) => {
   response.sendFile(__dirname + "/web/html/spotify.html");
 });
