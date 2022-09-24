@@ -4,13 +4,38 @@ const path = require("path");
 const {MessageEmbed} = require("discord.js");
 const {logger} = require("../utils/logger");
 
-const apiKey = process.env.VISUAL_CROSSING_KEY;
+const VISUAL_CROSSING_KEY = process.env.VISUAL_CROSSING_KEY;
+const ZIPCODEBASE_KEY = process.env.ZIPCODEBASE_KEY;
 
-async function sendGetRequest(location) {
-  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}/?unitGroup=us&key=${apiKey}&contentType=json`;
+async function sendGetRequestWeather(location) {
+  logger.info(`[Weather] Getting Weather for ${location}`);
+  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}/?unitGroup=us&key=${VISUAL_CROSSING_KEY}&contentType=json`;
   let response = await fetch(url, {method: "GET"});
+  logger.info(`[Weather] Weather Retrieval Status: ${response.status}`);
+  if (response.status == 400) {
+    return undefined;
+  }
   response = await response.json();
   return response;
+}
+
+async function sendGetRequestZipCode(zip) {
+  logger.info(`[Weather] Getting Zip Code Location for ${zip}`);
+  const url = `https://app.zipcodebase.com/api/v1/search?apikey=${ZIPCODEBASE_KEY}&codes=${zip}&country=US`;
+  let response = await fetch(url, {method: "GET"});
+  logger.info(`[Weather] Zip Code Location Status: ${response.status}`);
+  response = await response.json();
+  return response;
+}
+
+async function convertZipCode(zip) {
+  const response = await sendGetRequestZipCode(zip);
+  const location = response.results[zip][0];
+  if (!location) {
+    return zip;
+  } else {
+    return `${location.city}, ${location.state_code}, United States`;
+  }
 }
 
 function temperatureConverter(faren) {
@@ -52,9 +77,18 @@ module.exports = {
   async execute(client, interaction) {
     const location = interaction.options.getString("location");
     logger.info(`[Command] Weather | Location: ${location}`);
-    const data = await sendGetRequest(location);
+    const data = await sendGetRequestWeather(location);
+    if (!data) {
+      interaction.reply("Cannot Resolve Location");
+      return;
+    }
+    const splitLocation = data.resolvedAddress.split(", ");
+    if (splitLocation[1] == "USA") {
+      data.resolvedAddress = await convertZipCode(splitLocation[0]);
+    }
     const embed = await buildEmbed(data);
+
     interaction.reply({embeds: [embed], files: [{attachment: path.join(__dirname, `../media/VisualCrossingIcons/${data.currentConditions.icon}.png`), name: "weather.png"}]});
-    return "N/A";
+    return;
   },
 };
