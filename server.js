@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const {logger} = require("./utils/logger");
-const file = require("./utils/file");
 
 // Routing
 const auth = require("./routes/auth");
@@ -27,16 +26,6 @@ app.get("/spotify", (request, response) => {
 
 app.get("/youtube", (request, response) => {
   response.sendFile(__dirname + "/web/html/youtube.html");
-});
-
-app.get("/spotify_data", (request, response) => {
-  const fileArray = file.lineArray("./web/saved/spotify.txt");
-  response.send({id: fileArray});
-});
-
-app.get("/youtube_data", (request, response) => {
-  const fileArray = file.lineArray("./web/saved/youtube.txt");
-  response.send({id: fileArray});
 });
 
 app.all("*", (request, response) => {

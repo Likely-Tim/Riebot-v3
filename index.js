@@ -20,7 +20,6 @@ const {spotifyButtonInteraction} = require("./commands/spotify.js");
 const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js");
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
-const file = require("./utils/file.js");
 
 const tesseract = require("./js/tesseract-ocr");
 
