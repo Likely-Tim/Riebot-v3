@@ -22,6 +22,8 @@ const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
 const file = require("./utils/file.js");
 
+const tesseract = require("./js/tesseract-ocr");
+
 // Databases
 const dbInteractions = require("./databaseUtils/messageInteractions.js");
 
@@ -63,10 +65,15 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.on("messageCreate", async (message) => {
+  // Delete pinned message notification if Riebot-v3
   if (message.type == "CHANNEL_PINNED_MESSAGE" && message.author.id == 876282017149505537n) {
     message.delete();
   }
   if (message.author.bot == false) {
+    const messageAttachmentArray = Array.from(message.attachments.values());
+    if (messageAttachmentArray.length != 0) {
+      tesseract.tesseractExtractText(messageAttachmentArray);
+    }
     let content = message.content;
     if (content.startsWith("https://open.spotify.com/track/")) {
       fs.writeFile("./web/saved/spotify.txt", content.replace("https://open.spotify.com/track/", "") + "\n", {flag: "a+"}, (err) => {
