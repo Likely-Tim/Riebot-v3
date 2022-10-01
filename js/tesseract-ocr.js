@@ -16,8 +16,7 @@ async function tesseractExtractText(messageAttachmentArray) {
       const url = messageAttachmentArray[i].url;
       if (checkURL(url)) {
         const extractedText = await tesseract.recognize(url, config);
-        dbTesseract.put(extractedText, url);
-        console.log(extractedText);
+        dbTesseract.put(url, extractedText);
       }
     } catch (error) {
       logger.info(`[Tesseract] Text Extraction Fail`);

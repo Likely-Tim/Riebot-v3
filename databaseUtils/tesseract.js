@@ -14,5 +14,16 @@ async function get(key) {
   }
 }
 
+async function getAll(page) {
+  const iterator = db.iterator();
+  if (page == 1) {
+    return await iterator.nextv(10);
+  }
+  let offset = (page - 1) * 10;
+  await iterator.nextv(offset);
+  return await iterator.nextv(10);
+}
+
 module.exports.put = put;
 module.exports.get = get;
+module.exports.getAll = getAll;
