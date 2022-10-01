@@ -3,12 +3,16 @@ const app = express();
 const {logger} = require("./utils/logger");
 const {auth, requiresAuth} = require("express-openid-connect");
 
+const auth0BaseUrl = process.env.AUTH0_BASE_URL;
+const auth0ClientId = process.env.AUTH0_CLIENT_ID;
+const auth0Secret = process.env.AUTH0_SECRET;
+
 const config = {
   authRequired: false,
   auth0Logout: true,
-  secret: "a long, randomly-generated string stored in env",
-  baseURL: "http://localhost:3000",
-  clientID: "7CVOME99pcKIB62JslqaU2XMaBHPkAsq",
+  secret: auth0Secret,
+  baseURL: auth0BaseUrl,
+  clientID: auth0ClientId,
   issuerBaseURL: "https://riebot-v3.us.auth0.com",
 };
 
