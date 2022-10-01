@@ -17,6 +17,7 @@ function generateLogButtons(response) {
   for (let i = 0; i < logNames.length; i++) {
     let button = document.createElement("button");
     button.setAttribute("id", logNames[i]);
+    button.setAttribute("class", "logs");
     let text = document.createTextNode(logNames[i]);
     button.appendChild(text);
     button.addEventListener("click", logDisplay);
