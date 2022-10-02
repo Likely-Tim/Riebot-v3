@@ -1,4 +1,4 @@
-sendGetRequest("/tesseract?page=1").then((response) => {
+sendGetRequest("/googleVision?page=1").then((response) => {
   console.log(response);
 });
 

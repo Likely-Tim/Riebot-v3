@@ -21,7 +21,7 @@ const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
 
-const tesseract = require("./js/tesseract-ocr");
+const googleVision = require("./js/googleVision");
 
 // Databases
 const dbInteractions = require("./databaseUtils/messageInteractions.js");
@@ -71,7 +71,7 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot == false) {
     const messageAttachmentArray = Array.from(message.attachments.values());
     if (messageAttachmentArray.length != 0) {
-      tesseract.tesseractExtractText(messageAttachmentArray);
+      googleVision.textExtraction(messageAttachmentArray);
     }
     let content = message.content;
     if (content.startsWith("https://open.spotify.com/track/")) {

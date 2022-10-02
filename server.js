@@ -29,7 +29,7 @@ const config = {
 // Routing
 const authService = require("./routes/auth");
 const logs = require("./routes/logs");
-const tesseract = require("./routes/tesseract");
+const googleVision = require("./routes/googleVision");
 
 app.use(auth(config));
 app.use(express.json());
@@ -37,7 +37,7 @@ app.use(express.static("web"));
 
 app.use("/auth", requiresAuth(), authService);
 app.use("/logs", requiresAuth(), logs);
-app.use("/tesseract", requiresAuth(), tesseract);
+app.use("/googleVision", requiresAuth(), googleVision);
 
 app.get("/", (request, response) => {
   response.sendFile(__dirname + "/web/html/index.html");
