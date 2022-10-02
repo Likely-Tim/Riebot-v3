@@ -1,7 +1,17 @@
 const express = require("express");
 const app = express();
+var fs = require("fs");
+var http = require("http");
+var https = require("https");
 const {logger} = require("./utils/logger");
 const {auth, requiresAuth} = require("express-openid-connect");
+
+let key = fs.readFileSync("./sslcert/key.pem", "utf8");
+let certificate = fs.readFileSync("./sslcert/cert.pem", "utf8");
+let credentials = {key: key, cert: certificate};
+
+let httpServer = http.createServer(app);
+let httpsServer = https.createServer(credentials, app);
 
 const auth0BaseUrl = process.env.AUTH0_BASE_URL;
 const auth0ClientId = process.env.AUTH0_CLIENT_ID;
@@ -59,8 +69,11 @@ app.all("*", (request, response) => {
 });
 
 function initializeServer() {
-  app.listen(process.env.PORT || 3000, () => {
-    logger.info("Server initialized");
+  httpServer.listen(3000, () => {
+    logger.info("HTTP Server Initialized");
+  });
+  httpsServer.listen(8443, () => {
+    logger.info("HTTPS Server Initialized");
   });
 }
 
