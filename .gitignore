@@ -5,3 +5,4 @@ databases/*
 media/*
 !media/VisualCrossingIcons
 logs
+sslcert

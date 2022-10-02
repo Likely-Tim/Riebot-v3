@@ -8,3 +8,5 @@ pm2 kill: Kills pm2
 
 pm2 start index.js --name Riebot-v3 --time --restart-delay=3000
 pm2 restart 0
+
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
