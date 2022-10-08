@@ -1,15 +1,11 @@
 const vision = require("@google-cloud/vision");
 const dbGoogleVision = require("../databaseUtils/googleVision");
 const {logger} = require("../utils/logger");
-const CREDENTIALS = require("../credentials/googleVision.json");
+const path = require("path");
 
-const CONFIG = {
-  credentials: {
-    private_key: CREDENTIALS.private_key,
-    client_email: CREDENTIALS.client_email,
-  },
-};
-const client = new vision.ImageAnnotatorClient(CONFIG);
+const GOOGLE_VISION_CREDENTIALS_PATH = process.env.GOOGLE_VISION_CREDENTIALS_PATH;
+
+const client = new vision.ImageAnnotatorClient({keyFilename: path.join(__dirname, "..", GOOGLE_VISION_CREDENTIALS_PATH)});
 
 async function textExtraction(messageAttachmentArray) {
   for (let i = 0; i < messageAttachmentArray.length; i++) {

@@ -6,9 +6,12 @@ var https = require("https");
 const {logger} = require("./utils/logger");
 const {auth, requiresAuth} = require("express-openid-connect");
 
-let key = fs.readFileSync("./sslcert/key.pem", "utf8");
-let certificate = fs.readFileSync("./sslcert/cert.pem", "utf8");
-let credentials = {key: key, cert: certificate};
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
+const SSL_CERTIFICATE_PATH = process.env.SSL_CERTIFICATE_PATH;
+
+let sslKey = fs.readFileSync(SSL_KEY_PATH, "utf8");
+let sslCertificate = fs.readFileSync(SSL_CERTIFICATE_PATH, "utf8");
+let credentials = {key: sslKey, cert: sslCertificate};
 
 let httpServer = http.createServer(app);
 let httpsServer = https.createServer(credentials, app);

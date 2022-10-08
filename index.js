@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({path: "./secrets/.env"});
 const fs = require("fs");
 const initializeServer = require("./server.js");
 const {logger, startUpLogger} = require("./utils/logger.js");

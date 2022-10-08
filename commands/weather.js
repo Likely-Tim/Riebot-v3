@@ -5,7 +5,7 @@ const {MessageEmbed} = require("discord.js");
 const {logger} = require("../utils/logger");
 
 const VISUAL_CROSSING_KEY = process.env.VISUAL_CROSSING_KEY;
-const ZIPCODEBASE_KEY = process.env.ZIPCODEBASE_KEY;
+const ZIP_CODE_BASE_KEY = process.env.ZIP_CODE_BASE_KEY;
 
 async function sendGetRequestWeather(location) {
   logger.info(`[Weather] Getting Weather for ${location}`);
@@ -21,7 +21,7 @@ async function sendGetRequestWeather(location) {
 
 async function sendGetRequestZipCode(zip) {
   logger.info(`[Weather] Getting Zip Code Location for ${zip}`);
-  const url = `https://app.zipcodebase.com/api/v1/search?apikey=${ZIPCODEBASE_KEY}&codes=${zip}&country=US`;
+  const url = `https://app.zipcodebase.com/api/v1/search?apikey=${ZIP_CODE_BASE_KEY}&codes=${zip}&country=US`;
   let response = await fetch(url, {method: "GET"});
   logger.info(`[Weather] Zip Code Location Status: ${response.status}`);
   response = await response.json();
