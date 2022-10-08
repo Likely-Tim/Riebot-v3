@@ -21,7 +21,7 @@ const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js
 const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
 const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
 
-const googleVision = require("./js/googleVision");
+const googleVision = require("./js/text-extraction");
 
 // Databases
 const dbInteractions = require("./databaseUtils/messageInteractions.js");
