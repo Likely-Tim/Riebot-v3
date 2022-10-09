@@ -16,7 +16,7 @@ let credentials = {key: sslKey, cert: sslCertificate};
 let httpServer = http.createServer(app);
 let httpsServer = https.createServer(credentials, app);
 
-const auth0BaseUrl = process.env.AUTH0_BASE_URL;
+const auth0BaseUrl = process.env.BASE_URL;
 const auth0ClientId = process.env.AUTH0_CLIENT_ID;
 const auth0Secret = process.env.AUTH0_SECRET;
 
