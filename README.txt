@@ -27,6 +27,9 @@ sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
 sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
 sudo netfilter-persistent save
 
+# ChartJS
+sudo apt install fontconfig
+
 # Add Callback
 - Auth0
 - Spotify
