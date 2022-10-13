@@ -1,25 +1,25 @@
-require("dotenv").config({path: "./secrets/.env"});
+require("dotenv").config({ path: "./secrets/.env" });
 const fs = require("fs");
 const initializeServer = require("./server.js");
-const {logger, startUpLogger} = require("./utils/logger.js");
+const { logger, startUpLogger } = require("./utils/logger.js");
 const refreshSlashCommands = require("./SlashRefresh");
 
 // Discord JS
-const {Client, Collection, Intents} = require("discord.js");
+const { Client, Collection, Intents } = require("discord.js");
 const client = new Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
 });
 
 // Discord music player
-const {Player} = require("discord-music-player");
+const { Player } = require("discord-music-player");
 const player = new Player(client);
 client.player = player;
 
 // Reinitialize old command interactions
-const {spotifyButtonInteraction} = require("./commands/spotify.js");
-const {spotifyPlayingButtonInteraction} = require("./commands/spotify-playing.js");
-const {spotifyTopButtonInteraction} = require("./commands/spotify-top.js");
-const {animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction} = require("./commands/anime.js");
+const { spotifyButtonInteraction } = require("./commands/spotify.js");
+const { spotifyPlayingButtonInteraction } = require("./commands/spotify-playing.js");
+const { spotifyTopButtonInteraction } = require("./commands/spotify-top.js");
+const { animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction } = require("./commands/anime.js");
 
 const googleVision = require("./js/text-extraction");
 
@@ -48,7 +48,7 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
   // Check if Riebot-v3's command
-  const {commandName, user} = interaction;
+  const { commandName, user } = interaction;
   if (!client.commands.has(commandName)) {
     return;
   }
@@ -75,7 +75,7 @@ client.on("messageCreate", async (message) => {
     }
     let content = message.content;
     if (content.startsWith("https://open.spotify.com/track/")) {
-      fs.writeFile("./web/saved/spotify.txt", content.replace("https://open.spotify.com/track/", "") + "\n", {flag: "a+"}, (err) => {
+      fs.writeFile("./web/saved/spotify.txt", content.replace("https://open.spotify.com/track/", "") + "\n", { flag: "a+" }, (err) => {
         if (err) {
           console.log(err);
         }
@@ -84,7 +84,7 @@ client.on("messageCreate", async (message) => {
       content = content.replace("https://www.youtube.com/watch", "");
       const parameters = new URLSearchParams(content);
       if (parameters.has("v")) {
-        fs.writeFile("./web/saved/youtube.txt", parameters.get("v") + "\n", {flag: "a+"}, (err) => {
+        fs.writeFile("./web/saved/youtube.txt", parameters.get("v") + "\n", { flag: "a+" }, (err) => {
           if (err) {
             console.log(err);
           }
@@ -98,7 +98,7 @@ client.on("messageCreate", async (message) => {
       } else {
         content = content.substr(start + 1, end - start - 1);
       }
-      fs.writeFile("./web/saved/youtube.txt", content + "\n", {flag: "a+"}, (err) => {
+      fs.writeFile("./web/saved/youtube.txt", content + "\n", { flag: "a+" }, (err) => {
         if (err) {
           console.log(err);
         }

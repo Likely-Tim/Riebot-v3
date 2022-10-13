@@ -3,15 +3,15 @@ const app = express();
 var fs = require("fs");
 var http = require("http");
 var https = require("https");
-const {logger} = require("./utils/logger");
-const {auth, requiresAuth} = require("express-openid-connect");
+const { logger } = require("./utils/logger");
+const { auth, requiresAuth } = require("express-openid-connect");
 
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 const SSL_CERTIFICATE_PATH = process.env.SSL_CERTIFICATE_PATH;
 
 let sslKey = fs.readFileSync(SSL_KEY_PATH, "utf8");
 let sslCertificate = fs.readFileSync(SSL_CERTIFICATE_PATH, "utf8");
-let credentials = {key: sslKey, cert: sslCertificate};
+let credentials = { key: sslKey, cert: sslCertificate };
 
 let httpServer = http.createServer(app);
 let httpsServer = https.createServer(credentials, app);
@@ -33,6 +33,7 @@ const config = {
 const authService = require("./routes/auth");
 const logs = require("./routes/logs");
 const googleVision = require("./routes/googleVision");
+const anime = require("./routes/anime");
 
 app.use(auth(config));
 app.use(express.json());
@@ -41,6 +42,7 @@ app.use(express.static("web"));
 app.use("/auth", requiresAuth(), authService);
 app.use("/logs", requiresAuth(), logs);
 app.use("/googleVision", requiresAuth(), googleVision);
+app.use("/anime", requiresAuth(), anime);
 
 app.get("/", (request, response) => {
   response.sendFile(__dirname + "/web/html/index.html");
@@ -49,9 +51,9 @@ app.get("/", (request, response) => {
 app.get("/user", (request, response) => {
   const user = request.oidc.user;
   if (user) {
-    response.send({user: user.name});
+    response.send({ user: user.name });
   } else {
-    response.send({user: undefined});
+    response.send({ user: undefined });
   }
 });
 

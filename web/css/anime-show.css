@@ -1,0 +1,58 @@
+
+div#days {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: 20px;
+    margin-right: 20px;
+    justify-content: center;
+}
+
+div.day {
+    display: flex;
+    flex-direction: column;
+    max-width: 45%;
+    background-color: #252629;
+    align-self: flex-start;
+    margin: 15px;
+    padding: 15px;
+    border-radius: 30px;
+    color: #e6e1e1;
+}
+
+h2 {
+    padding: 10px;
+    background-color: #252629;
+}
+
+div.covers {
+    display: flex;
+    flex-wrap: wrap;
+    background-color: #252629;
+    justify-content: space-between;
+
+}
+
+div.cover {
+    background-color: #252629;
+    margin: 10px;
+}
+
+div#Future {
+    order: 8;
+}
+
+img.covers {
+    object-fit: cover;
+    width: 125px;
+    height: 175px;
+    border-radius: 10px;
+}
+
+a {
+    background-color: #252629;
+}
+
+.filling-empty-space-childs {
+    width:125px; /*the width of the images in this example*/
+    height:0; /*Important! for the divs to collapse should they fall in a new row*/
+}
