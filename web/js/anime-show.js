@@ -1,6 +1,7 @@
 sendGetRequest("/anime/current").then((response) => {
   const mediaArray = mediaParseByDay(response.media);
   mediaEnterDay(mediaArray);
+  document.getElementById("loading").style.display = "none";
 });
 
 const numberToDiv = { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Future" };
