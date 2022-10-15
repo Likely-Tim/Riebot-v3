@@ -1,0 +1,13 @@
+main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-self: center;
+}
+
+p {
+    color: white;
+    font-size: 50px;
+    font-weight: 700;
+}

@@ -34,6 +34,7 @@ const authService = require("./routes/auth");
 const logs = require("./routes/logs");
 const googleVision = require("./routes/googleVision");
 const anime = require("./routes/anime");
+const { response } = require("express");
 
 app.use(auth(config));
 app.use(express.json());
@@ -69,8 +70,12 @@ app.get("/youtube", (request, response) => {
   response.sendFile(__dirname + "/web/html/youtube.html");
 });
 
+app.get("/favicon.ico", (request, response) => {
+  response.sendFile(__dirname + "/web/favicon/favicon.ico");
+});
+
 app.all("*", (request, response) => {
-  response.sendFile(__dirname + "/docs" + request.url);
+  response.sendFile(__dirname + "/web/html/404.html");
 });
 
 function initializeServer() {
