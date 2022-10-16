@@ -1,9 +1,11 @@
-const {MessageEmbed} = require("discord.js");
+const { time } = require("@discordjs/builders");
+const { MessageEmbed } = require("discord.js");
+const { fahrenheitToBoth, unixTo12Hour, unixToDateAnd12Hour, unixToDay, capitalize } = require("../utils/misc");
 
 const MAL_LOGO = "https://image.myanimelist.net/ui/OK6W_koKDTOqqqLDbIoPAiC8a86sHufn_jOI-JGtoCQ";
 const ANI_LOGO = "https://anilist.co/img/icons/android-chrome-512x512.png";
 
-function defaultEmbed() {
+function notFoundEmbed() {
   const result = new MessageEmbed();
   result.setDescription("Not found");
   return result;
@@ -13,6 +15,30 @@ function basicEmbedBuilder(string) {
   const result = new MessageEmbed();
   result.setDescription(string);
   return result;
+}
+
+function weatherEmbedBuilder(object) {
+  const location = object.name;
+  const timezone = object.timezone;
+  const current = object.current;
+  const forecast = object.daily;
+  const alerts = object.alerts;
+  const embed = new MessageEmbed();
+  embed.setColor("#0099ff");
+  embed.setThumbnail(`http://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`);
+  embed.setTitle(`${location}, ${unixToDateAnd12Hour(current.dt, timezone)}\n${capitalize(current.weather[0].description)}`);
+  embed.setDescription(`**Current Temperature:** ${fahrenheitToBoth(current.temp)}\n**Feels Like:** ${fahrenheitToBoth(current.feels_like)}\n**Min:** ${fahrenheitToBoth(forecast[0].temp.min)}\n**Max:** ${fahrenheitToBoth(forecast[0].temp.max)}\n**Humidity:** ${current.humidity}%\n**Wind:** ${current.wind_speed} mph\n**Sunrise:** ${unixTo12Hour(current.sunrise, timezone)}\n **Sunset:** ${unixTo12Hour(current.sunset, timezone)}\n**UV Index:** ${current.uvi}`);
+  for (let i = 1; i < 7; i++) {
+    embed.addField(unixToDay(forecast[i].dt, timezone), `**Min:** ${fahrenheitToBoth(forecast[i].temp.min)}\n**Max** ${fahrenheitToBoth(forecast[i].temp.max)}\n**Percipitation:** ${forecast[i].pop * 100}%\n**Wind Gust: ** ${forecast[i].wind_gust.toFixed(1)} mph`, true);
+  }
+  if (alerts) {
+    const alertArray = [];
+    for (let i = 0; i < alerts.length; i++) {
+      alertArray.push(`**- [${unixToDateAnd12Hour(alerts[i].start, timezone)} - ${unixToDateAnd12Hour(alerts[i].end, timezone)}] ${alerts[i].event}**`);
+    }
+    embed.addField("Alerts", alertArray.join("\n"), false);
+  }
+  return embed;
 }
 
 function songCurrentSongEmbedBuilder(response, progressBar) {
@@ -63,7 +89,7 @@ function characterEmbed(character) {
 
 function showEmbedBuilderMal(malResponse) {
   if (!malResponse) {
-    return defaultEmbed();
+    return notFoundEmbed();
   }
   const result = new MessageEmbed();
   result.setTitle(malResponse.title.slice(0, 80));
@@ -76,7 +102,7 @@ function showEmbedBuilderMal(malResponse) {
   result.setDescription(malResponse.synopsis);
   result.setThumbnail(malResponse.main_picture.large);
   result.addFields(
-    {name: "\u200B", value: "\u200B"},
+    { name: "\u200B", value: "\u200B" },
     {
       name: ":trophy: Rank",
       value: `➤ ${nullCheck(malResponse.rank)}`,
@@ -94,35 +120,6 @@ function showEmbedBuilderMal(malResponse) {
     }
   );
   result.setColor(colorPicker(malResponse.status));
-  return result;
-}
-
-function showEmbedBuilderAnilist(response) {
-  const result = new MessageEmbed();
-  result.setTitle(response.title.romaji);
-  result.setURL(response.siteUrl);
-  result.setAuthor({
-    name: studioList("anilist", response.studios.nodes),
-    iconURL: ANI_LOGO,
-  });
-  if (response.description == null) {
-    result.setDescription("TBA");
-  } else {
-    result.setDescription(response.description.replaceAll("<br>", ""));
-  }
-  result.setThumbnail(response.coverImage.extraLarge);
-  const rank = anilistRank(response.rankings);
-  result.addFields(
-    {name: "\u200B", value: "\u200B"},
-    {name: ":trophy: Rank", value: `➤ ${rank}`, inline: true},
-    {
-      name: ":alarm_clock: Episodes",
-      value: `➤ ${response.episodes}`,
-      inline: true,
-    },
-    {name: ":100: Rating", value: `➤ ${response.meanScore}`, inline: true}
-  );
-  result.setColor(colorPicker(response.status));
   return result;
 }
 
@@ -288,17 +285,6 @@ function episodeCheck(data) {
   }
 }
 
-function anilistRank(data) {
-  let rank = "N/A";
-  for (let i = 0; i < data.length; i++) {
-    if (data[i].allTime == true && data[i].type == "RATED") {
-      rank = data[i].rank;
-      break;
-    }
-  }
-  return rank;
-}
-
 function anilistText(input) {
   if (input == null) {
     return "N/A";
@@ -384,12 +370,4 @@ function titleNull(input) {
   return ` (${input})`;
 }
 
-module.exports.defaultEmbed = defaultEmbed;
-module.exports.showEmbedBuilderMal = showEmbedBuilderMal;
-module.exports.showEmbedBuilderAnilist = showEmbedBuilderAnilist;
-module.exports.songQueueEmbedBuilder = songQueueEmbedBuilder;
-module.exports.songCurrentSongEmbedBuilder = songCurrentSongEmbedBuilder;
-module.exports.basicEmbedBuilder = basicEmbedBuilder;
-module.exports.vaEmbedBuilder = vaEmbedBuilder;
-module.exports.characterEmbed = characterEmbed;
-module.exports.opEdEmbedsBuilder = opEdEmbedsBuilder;
+module.exports = { showEmbedBuilderMal, songQueueEmbedBuilder, songCurrentSongEmbedBuilder, basicEmbedBuilder, vaEmbedBuilder, characterEmbed, opEdEmbedsBuilder, weatherEmbedBuilder };
