@@ -9,7 +9,7 @@ div#days {
 div.day {
     display: flex;
     flex-direction: column;
-    max-width: 45%;
+    width: 45%;
     background-color: #252629;
     align-self: flex-start;
     margin: 15px;
@@ -24,11 +24,11 @@ h2 {
 }
 
 div.covers {
-    display: flex;
+    display: grid;
     flex-wrap: wrap;
     background-color: #252629;
-    justify-content: space-between;
-
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    justify-items: center;
 }
 
 div.cover {
@@ -49,4 +49,10 @@ img.covers {
 
 a {
     background-color: #252629;
+}
+
+@media (max-width: 750px) {
+    div.day {
+        width: 90%;
+    }
 }

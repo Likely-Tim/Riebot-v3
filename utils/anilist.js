@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const { logger } = require("./logger");
 
 async function getAnimeSeasonQuery(page, season, year) {
+  logger.info(`[Anilist] Get Anime for ${season} ${year} page ${page}`);
   const query = `
     query {
       Page(page: ${page}, perPage: 50) {
