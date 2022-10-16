@@ -3,6 +3,7 @@ const fs = require("fs");
 const initializeServer = require("./server.js");
 const { logger, startUpLogger } = require("./utils/logger.js");
 const refreshSlashCommands = require("./SlashRefresh");
+const { cronJobs } = require("./js/cron");
 
 // Discord JS
 const { Client, Collection, Intents } = require("discord.js");
@@ -20,6 +21,9 @@ const { spotifyButtonInteraction } = require("./commands/spotify.js");
 const { spotifyPlayingButtonInteraction } = require("./commands/spotify-playing.js");
 const { spotifyTopButtonInteraction } = require("./commands/spotify-top.js");
 const { animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction } = require("./commands/anime.js");
+
+// Cron Jobs
+cronJobs(client);
 
 const googleVision = require("./js/text-extraction");
 
@@ -156,3 +160,11 @@ function commandFunctionMapper() {
   map.set("anime-va", animeVAButtonInteraction);
   return map;
 }
+
+async function dailyWeather(client) {
+  console.log("TESTING");
+  //   const response = await sendGetRequestWeather("Fremont");
+  //   const embed = weatherEmbedBuilder(response);
+}
+
+module.exports.client = client;

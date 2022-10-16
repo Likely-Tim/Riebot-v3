@@ -16,7 +16,7 @@ module.exports = {
       const embed = weatherEmbedBuilder(response);
       interaction.editReply({ embeds: [embed] });
     } else {
-      const embed = basicEmbedBuilder(`Can not find ${location}`);
+      const embed = basicEmbedBuilder(`Could not find ${location}`);
       interaction.editReply({ embeds: [embed] });
     }
   },
