@@ -8,6 +8,8 @@ const endOfWeek = endOfDay;
 endOfWeek.setHours(endOfWeek.getHours() + 144);
 const endOfWeekUnix = endOfWeek.getTime() / 1000;
 
+generateChoiceButtons(["Airing"]);
+
 sendGetRequest(`/anime/airing?start=${midnightUnix}&end=${endOfWeekUnix}`).then((response) => {
   const mediaArray = mediaByDay(response.media);
   const sortedMediaArray = sortByPopularity(mediaArray);
@@ -20,6 +22,24 @@ sendGetRequest(`/anime/airing?start=${midnightUnix}&end=${endOfWeekUnix}`).then(
 //   mediaEnterDay(mediaArray);
 //   document.getElementById("loading").style.display = "none";
 // });
+
+function generateChoiceButtons(buttons) {
+  const buttonContainer = document.createElement("div");
+  buttonContainer.setAttribute("id", "choiceButtonContainer");
+  for (let i = 0; i < buttons.length; i++) {
+    const button = document.createElement("button");
+    if (buttons[i] == "Airing") {
+      button.setAttribute("class", "choiceButton active");
+    } else {
+      button.setAttribute("class", "choiceButton");
+    }
+    button.setAttribute("id", buttons[i]);
+    button.appendChild(document.createTextNode(buttons[i]));
+    buttonContainer.appendChild(button);
+  }
+  document.getElementsByTagName("main")[0].appendChild(buttonContainer);
+  document.getElementsByTagName("main")[0].appendChild(document.createElement("hr"));
+}
 
 const numberToDiv = { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday", 7: "Future", 8: "Unending" };
 
