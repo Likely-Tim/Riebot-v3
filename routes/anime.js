@@ -12,4 +12,15 @@ router.get("/current", async (request, response) => {
   response.send({ media: media });
 });
 
+router.get("/airing", async (request, response) => {
+  const startTime = request.query.start;
+  const endTime = request.query.end;
+  if (startTime && endTime) {
+    const media = await anilist.getAnimeAiring(startTime, endTime);
+    response.send({ media: media });
+  } else {
+    response.sendStatus(500);
+  }
+});
+
 module.exports = router;

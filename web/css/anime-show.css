@@ -1,4 +1,4 @@
-div#days {
+div#dayContainer {
     display: flex;
     flex-wrap: wrap;
     margin-left: 20px;
@@ -37,6 +37,10 @@ div.cover {
 }
 
 div#Future {
+    order: 8;
+}
+
+div#Unending {
     order: 8;
 }
 
