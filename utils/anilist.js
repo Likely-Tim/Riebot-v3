@@ -128,6 +128,70 @@ async function getAnimeAiringQuery(page, startTime, endTime) {
   return response;
 }
 
+async function getAnimeWatchingQuery(userId) {
+  logger.info(`[Anilist] Get Anime Watching List for ${userId}`);
+  const query = `
+    query {
+      MediaListCollection(userId: ${userId}, type: ANIME, forceSingleCompletedList: true, status: CURRENT) {
+        lists {
+          entries {
+            media {
+              popularity
+              format
+              title {
+                romaji
+                english
+                native
+              }
+              nextAiringEpisode {
+                timeUntilAiring
+                airingAt
+                episode
+              }
+              episodes
+              airingSchedule {
+                pageInfo {
+                  hasNextPage
+                }
+                nodes {
+                  timeUntilAiring
+                  episode
+                }
+              }
+              coverImage {
+                extraLarge
+                large
+                medium
+              }
+              siteUrl
+              stats {
+                statusDistribution {
+                  status
+                  amount
+                }
+              }
+            }
+          }
+        }
+      }
+    }   
+  `;
+  const url = "https://graphql.anilist.co";
+  let response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: query,
+    }),
+  });
+  logger.info(`[Anilist] Get Anime Watching Response Status: ${response.status}`);
+  response = await response.json();
+  return response;
+}
+
 async function getAnimeSeason(season, year) {
   let page = 1;
   let response = await getAnimeSeasonQuery(page, season, year);
@@ -157,9 +221,21 @@ async function getAnimeAiring(startTime, endTime) {
   return removeDuplicateMedia(media);
 }
 
+async function getAnimeWatching(userId) {
+  let response = await getAnimeWatchingQuery(userId);
+  const media = [];
+  if (response.data.MediaListCollection.lists.length == 0) {
+    return media;
+  }
+  for (let i = 0; i < response.data.MediaListCollection.lists[0].entries.length; i++) {
+    media.push(response.data.MediaListCollection.lists[0].entries[i].media);
+  }
+  return media;
+}
+
 // Anilist API bug may return duplicates
 function removeDuplicateMedia(media) {
   return media.filter((value, index, self) => index === self.findIndex((t) => t.siteUrl === value.siteUrl));
 }
 
-module.exports = { getAnimeSeason, getAnimeAiring };
+module.exports = { getAnimeSeason, getAnimeAiring, getAnimeWatching };

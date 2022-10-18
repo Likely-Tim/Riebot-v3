@@ -10,7 +10,7 @@ const endOfWeekUnix = endOfWeek.getTime() / 1000;
 
 generateChoiceButtons(["Airing"]);
 
-sendGetRequest(`/anime/airing?start=${midnightUnix}&end=${endOfWeekUnix}`).then((response) => {
+sendGetRequest(`/anime/show/airing?start=${midnightUnix}&end=${endOfWeekUnix}`).then((response) => {
   const mediaArray = mediaByDay(response.media);
   const sortedMediaArray = sortByPopularity(mediaArray);
   mediaGenerateHtml(sortedMediaArray);
