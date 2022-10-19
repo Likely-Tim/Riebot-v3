@@ -34,6 +34,7 @@ sudo apt install fontconfig
 - Auth0
 - Spotify
 - MyAnimeList
+- Anilist
 
 # Install OracleDB
 https://oracle.github.io/node-oracledb/INSTALL.html
