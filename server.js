@@ -3,6 +3,7 @@ const app = express();
 var fs = require("fs");
 var http = require("http");
 var https = require("https");
+const cookieParser = require("cookie-parser");
 const { logger } = require("./utils/logger");
 const { auth, requiresAuth } = require("express-openid-connect");
 
@@ -39,6 +40,7 @@ const { response } = require("express");
 app.use(auth(config));
 app.use(express.json());
 app.use(express.static("web"));
+app.use(cookieParser());
 
 app.use("/auth", requiresAuth(), authService);
 app.use("/logs", requiresAuth(), logs);

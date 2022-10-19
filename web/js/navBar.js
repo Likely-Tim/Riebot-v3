@@ -6,7 +6,7 @@ const dropdown = createDiv("dropdown", "hamburgerDropdown");
 
 createMenuItem("Home", "/");
 createMenuItem("Logs", "/logs");
-createSubmenuItem("Authentication", ["Spotify", "MyAnimeList"], ["/auth?type=spotify", "/auth?type=mal"]);
+createSubmenuItem("Authentication", ["Spotify", "MyAnimeList"], ["/auth/spotify", "/auth/mal"]);
 createSubmenuItem("Anime", ["Shows"], ["/anime/show"]);
 
 hamburger.appendChild(dropdown);

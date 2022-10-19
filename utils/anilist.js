@@ -192,6 +192,33 @@ async function getAnimeWatchingQuery(userId) {
   return response;
 }
 
+async function getAuthenticatedUserQuery(accessToken) {
+  logger.info(`[Anilist] Get Authenticated User`);
+  const query = `
+    query {
+      Viewer {
+        id
+        name
+      }
+    }  
+  `;
+  const url = "https://graphql.anilist.co";
+  let response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: query,
+    }),
+  });
+  logger.info(`[Anilist] Get Authenticated User Response Status: ${response.status}`);
+  response = await response.json();
+  return response;
+}
+
 async function getAnimeSeason(season, year) {
   let page = 1;
   let response = await getAnimeSeasonQuery(page, season, year);
@@ -233,9 +260,14 @@ async function getAnimeWatching(userId) {
   return media;
 }
 
+async function getAuthenticatedUser(accessToken) {
+  let response = await getAuthenticatedUserQuery(accessToken);
+  return response.data.Viewer;
+}
+
 // Anilist API bug may return duplicates
 function removeDuplicateMedia(media) {
   return media.filter((value, index, self) => index === self.findIndex((t) => t.siteUrl === value.siteUrl));
 }
 
-module.exports = { getAnimeSeason, getAnimeAiring, getAnimeWatching };
+module.exports = { getAnimeSeason, getAnimeAiring, getAnimeWatching, getAuthenticatedUser };

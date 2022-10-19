@@ -19,7 +19,7 @@ async function putAnimeShowUser(key, value) {
   await animeShowUsers.put(key, value);
 }
 
-async function getAllAnimeShowUser(key) {
+async function getAllAnimeShowUser() {
   try {
     return await animeShowUsers.iterator().all();
   } catch (error) {
