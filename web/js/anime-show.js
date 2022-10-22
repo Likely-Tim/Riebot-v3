@@ -26,6 +26,7 @@ displayAiringAnime();
 function displayAiringAnime() {
   document.getElementById("loading").style.display = "block";
   sendGetRequest(`/anime/show/airing?start=${midnightUnix}&end=${endOfWeekUnix}`).then((response) => {
+    console.log(response.media);
     const mediaArray = mediaByDay(response.media);
     const sortedMediaArray = sortByPopularity(mediaArray);
     mediaGenerateHtml(sortedMediaArray);
@@ -158,8 +159,21 @@ function mediaByDay(media) {
     if (!(media[i].format == "TV") && !(media[i].format == "TV_SHORT")) {
       continue;
     }
-    if (media[i].nextAiringEpisode && media[i].nextAiringEpisode.episode > 100) {
+    // There is no known next episode
+    if (!media[i].nextAiringEpisode) {
+      days[8].push(media[i]);
+      continue;
+    }
+    // Long lasting anime
+    if (media[i].nextAiringEpisode.episode > 100) {
       days[9].push(media[i]);
+      continue;
+    }
+    // Airing later today or this week
+    const nextAiringTime = media[i].nextAiringEpisode.airingAt;
+    const nextAiringDate = new Date(nextAiringTime * 1000);
+    if (endOfDay > nextAiringDate || endOfWeek > nextAiringDate) {
+      days[nextAiringDate.getDay()].push(media[i]);
       continue;
     }
     // Check if aired already today
@@ -170,19 +184,15 @@ function mediaByDay(media) {
       days[date.getDay()].push(media[i]);
       continue;
     }
-    // Find next airing episode
-    if (!media[i].nextAiringEpisode) {
-      days[8].push(media[i]);
+    // Assume will always air on same day of the week
+    const episodeAirTime = media[i].airingSchedule.nodes[0].timeUntilAiring;
+    const episodeAirDate = new Date();
+    episodeAirDate.setSeconds(episodeAirDate.getSeconds() + episodeAirTime);
+    if (episodeAirDate.getDay() == new Date().getDay()) {
+      days[episodeAirDate.getDay()].push(media[i]);
       continue;
     }
-    const nextAiringTime = media[i].nextAiringEpisode.airingAt;
-    const nextAiringDate = new Date(nextAiringTime * 1000);
-    // Airing today or this week
-    if (endOfDay > nextAiringDate || endOfWeek > nextAiringDate) {
-      days[nextAiringDate.getDay()].push(media[i]);
-    } else {
-      days[7].push(media[i]);
-    }
+    days[7].push(media[i]);
   }
   return days;
 }
@@ -197,17 +207,12 @@ function sortByPopularity(mediaArray) {
 }
 
 function getLatestEpisodeTime(media) {
+  // Airing Schedule not long enough
+  if (media.airingSchedule.pageInfo.hasNextPage) {
+    return null;
+  }
   for (let i = media.airingSchedule.nodes.length - 1; i >= 0; i--) {
     if (media.airingSchedule.nodes[i].timeUntilAiring < 0) {
-      return media.airingSchedule.nodes[i].timeUntilAiring;
-    }
-  }
-  return null;
-}
-
-function getNextEpisodeTime(media) {
-  for (let i = 0; i < media.airingSchedule.nodes.length; i++) {
-    if (media.airingSchedule.nodes[i].timeUntilAiring > 0) {
       return media.airingSchedule.nodes[i].timeUntilAiring;
     }
   }
