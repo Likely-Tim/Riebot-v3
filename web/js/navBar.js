@@ -6,6 +6,7 @@ const dropdown = createDiv("dropdown", "hamburgerDropdown");
 
 createMenuItem("Home", "/");
 createMenuItem("Logs", "/logs");
+createSubmenuItem("Discord", ["Spotify"], ["/auth/discord?task=spotify"]);
 createSubmenuItem("Authentication", ["Spotify", "MyAnimeList"], ["/auth/spotify", "/auth/mal"]);
 createSubmenuItem("Anime", ["Shows"], ["/anime/show"]);
 
