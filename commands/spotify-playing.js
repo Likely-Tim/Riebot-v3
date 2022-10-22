@@ -36,7 +36,7 @@ module.exports = {
     const userId = interaction.user.id;
     const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
     if (!accessToken) {
-      interaction.reply({ content: `${BASE_URL}auth/spotify?discordId=${userId}`, ephemeral: true });
+      interaction.reply({ content: `${BASE_URL}auth/discord?task=spotify`, ephemeral: true });
       return;
     }
     const response = await spotify.currentlyPlaying(userId, false);

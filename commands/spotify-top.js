@@ -93,7 +93,7 @@ module.exports = {
     logger.info(`[Command] Spotify Top | Type: ${type} | Time: ${time} | User: ${userId}`);
     const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
     if (!accessToken) {
-      interaction.reply({ content: `${BASE_URL}auth/spotify?discordId=${userId}`, ephemeral: true });
+      interaction.reply({ content: `${BASE_URL}auth/discord?task=spotify`, ephemeral: true });
       return;
     }
     const response = await spotify.topPlayed(userId, type, time);
