@@ -75,7 +75,9 @@ function generateChoiceButtons(buttons, buttonId) {
 
 function choiceButtonHandler(event) {
   if (this.id == "+") {
-    window.location = "/auth/anilist?redirectUrl=/anime/show&task=addAnimeShowUser";
+    document.cookie = "redirectUrl=/anime/show; sameSite=lax; path=/";
+    document.cookie = "task=addAnimeShowUser; sameSite=lax; path=/";
+    window.location = "/auth/anilist";
   } else {
     if (this.classList.contains("active")) {
       return;

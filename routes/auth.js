@@ -3,6 +3,7 @@ const router = express.Router();
 const fetch = require("node-fetch");
 const crypto = require("crypto");
 const anilist = require("../utils/anilist");
+const discord = require("../utils/discord");
 
 // Databases
 const dbToken = require("../databaseUtils/tokens.js");
@@ -14,12 +15,18 @@ const MAL_ID = process.env.MAL_ID;
 const MAL_SECRET = process.env.MAL_SECRET;
 const ANILIST_ID = process.env.ANILIST_ID;
 const ANILIST_SECRET = process.env.ANILIST_SECRET;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 
 const BASE_URL = process.env.BASE_URL;
 const BASE_URL_ENCODED = process.env.BASE_URL_ENCODED;
 
 router.get("/spotify", async (request, response) => {
-  response.redirect(`https://accounts.spotify.com/en/authorize?client_id=ea2c1c3ca31d409db90f288951542b67&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
+  if (request.cookies.discordId) {
+    response.redirect(`https://accounts.spotify.com/en/authorize?client_id=${SPOTIFY_ID}&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
+  } else {
+    response.redirect(`https://accounts.spotify.com/en/authorize?client_id=${SPOTIFY_ID}&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
+  }
 });
 
 router.get("/mal", async (request, response) => {
@@ -32,15 +39,52 @@ router.get("/mal", async (request, response) => {
 });
 
 router.get("/anilist", async (request, response) => {
-  const redirectUrl = request.query.redirectUrl;
-  const task = request.query.task;
-  if (redirectUrl) {
-    response.cookie("redirectUrl", redirectUrl, { sameSite: "lax", maxAge: 600000 });
-  }
-  if (task) {
-    response.cookie("task", task, { sameSite: "lax", maxAge: 600000 });
-  }
   response.redirect(`https://anilist.co/api/v2/oauth/authorize?client_id=${ANILIST_ID}&redirect_uri=${BASE_URL}auth/anilist/callback&response_type=code`);
+});
+
+// Scope: Identity
+router.get("/discord", async (request, response) => {
+  if (!request.query.task) {
+    response.redirect("/?discordSuccess=false");
+    return;
+  }
+  response.cookie("task", request.query.task, { sameSite: "lax", maxAge: 600000 });
+  const id = randomGenerator(64);
+  response.cookie("discordStateId", id, { sameSite: "lax", maxAge: 600000 });
+  const state = randomGenerator(64);
+  await dbToken.put(`${id}DiscordState`, state);
+  response.redirect(`https://discord.com/oauth2/authorize?response_type=code&client_id=${DISCORD_CLIENT_ID}&scope=identify&state=${state}&redirect_uri=${BASE_URL_ENCODED}auth%2Fdiscord%2Fcallback&prompt=consent`);
+});
+
+router.get("/discord/callback", async (request, response) => {
+  if (!request.cookies.discordStateId) {
+    response.redirect("/?discordSuccess=false");
+    return;
+  }
+  const state = await dbToken.get(`${request.cookies.discordStateId}DiscordState`);
+  response.clearCookie("discordStateId");
+  if (state != request.query.state) {
+    response.redirect("/?discordSuccess=false");
+    return;
+  }
+  const [accessToken, refreshToken] = await discordAccepted(request.query.code);
+  const task = request.cookies.task;
+  // Default return Discord ID
+  if (task == "spotify") {
+    response.clearCookie("task");
+    const user = await discord.getUser(accessToken);
+    const userId = user.id;
+    response.cookie("discordId", userId, { sameSite: "lax", maxAge: 600000 });
+    response.redirect(`/auth/spotify`);
+    return;
+  }
+  const redirectUrl = request.cookies.redirectUrl;
+  if (redirectUrl) {
+    response.clearCookie("redirectUrl");
+    response.redirect(redirectUrl);
+  } else {
+    response.redirect("/?discordSuccess=true");
+  }
 });
 
 router.get("/anilist/callback", async (request, response) => {
@@ -66,7 +110,16 @@ router.get("/anilist/callback", async (request, response) => {
 
 router.get("/spotify/callback", async (request, response) => {
   try {
-    await spotifyAccepted(request.query.code);
+    const [accessToken, refreshToken] = await spotifyAccepted(request.query.code);
+    if (request.cookies.discordId) {
+      const discordId = request.cookies.discordId;
+      response.clearCookie("discordId");
+      await dbToken.put(`${discordId}SpotifyAccess`, accessToken);
+      await dbToken.put(`${discordId}SpotifyRefresh`, refreshToken);
+    } else {
+      await dbToken.put("spotifyAccess", accessToken);
+      await dbToken.put("spotifyRefresh", refreshToken);
+    }
     response.redirect("/?spotifySuccess=true");
   } catch (error) {
     console.log(error);
@@ -108,8 +161,7 @@ async function spotifyAccepted(code) {
     throw new Error(response.statusText);
   }
   response = await response.json();
-  await dbToken.put("spotifyAccess", response.access_token);
-  await dbToken.put("spotifyRefresh", response.refresh_token);
+  return [response.access_token, response.refresh_token];
 }
 
 async function malAccepted(code) {
@@ -160,12 +212,39 @@ async function anilistAccepted(code) {
   return response.access_token;
 }
 
+async function discordAccepted(code) {
+  const url = "https://discord.com/api/oauth2/token";
+  const data = {
+    grant_type: "authorization_code",
+    client_id: DISCORD_CLIENT_ID,
+    client_secret: DISCORD_CLIENT_SECRET,
+    redirect_uri: `${BASE_URL}auth/discord/callback`,
+    code: code,
+  };
+  let response = await fetch(url, {
+    method: "POST",
+    header: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(data),
+  });
+  if (response.status != 200) {
+    throw new Error(response.status);
+  }
+  response = await response.json();
+  return [response.access_token, response.refresh_token];
+}
+
 function generatePKCECodeVerifier() {
   return crypto.randomBytes(64).toString("hex");
 }
 
 function randomGenerator(length) {
   return crypto.randomBytes(length / 2).toString("hex");
+}
+
+function createHash(string) {
+  return crypto.createHash("sha256").update(string).digest("hex");
 }
 
 module.exports = router;
