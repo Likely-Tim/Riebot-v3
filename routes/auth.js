@@ -24,6 +24,9 @@ const BASE_URL_ENCODED = process.env.BASE_URL_ENCODED;
 router.get("/spotify", async (request, response) => {
   if (request.cookies.discordId) {
     response.redirect(`https://accounts.spotify.com/en/authorize?client_id=${SPOTIFY_ID}&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
+  } else if (request.query.discordId) {
+    response.cookie("discordId", request.query.discordId, { sameSite: "lax", maxAge: 600000 });
+    response.redirect(`https://accounts.spotify.com/en/authorize?client_id=${SPOTIFY_ID}&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
   } else {
     response.redirect(`https://accounts.spotify.com/en/authorize?client_id=${SPOTIFY_ID}&response_type=code&redirect_uri=${BASE_URL_ENCODED}auth%2Fspotify%2Fcallback&scope=user-read-recently-played%20user-top-read%20user-read-currently-playing%20user-read-playback-state&show_dialog=true`);
   }

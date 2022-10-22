@@ -1,5 +1,5 @@
 const CryptoJS = require("crypto-js");
-const {Level} = require("level");
+const { Level } = require("level");
 
 const db = new Level("./databases/tokens");
 
@@ -16,7 +16,7 @@ async function get(key) {
     const value = CryptoJS.AES.decrypt(encrypted, CRYPTO_PASSWORD).toString(CryptoJS.enc.Utf8);
     return value;
   } catch (error) {
-    console.log(error);
+    return null;
   }
 }
 

@@ -1,12 +1,16 @@
 const fs = require("fs");
-const {SlashCommandBuilder} = require("@discordjs/builders");
-const {InteractionCollector} = require("discord.js");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { InteractionCollector } = require("discord.js");
 const spotify = require("../utils/spotify.js");
 const button = require("../utils/buttons.js");
 
+const BASE_URL = process.env.BASE_URL;
+
 // Databases
 const dbInteractions = require("../databaseUtils/messageInteractions.js");
-const {logger} = require("../utils/logger.js");
+const dbToken = require("../databaseUtils/tokens");
+
+const { logger } = require("../utils/logger.js");
 
 async function disablePrevious(client, newMessage) {
   try {
@@ -15,7 +19,7 @@ async function disablePrevious(client, newMessage) {
     const oldMessageId = await dbInteractions.get("spotify-playing_messageId");
     const oldMessage = await oldChannel.messages.fetch(oldMessageId);
     const buttons = button.disableAllButtons(oldMessage.components);
-    oldMessage.edit({components: buttons});
+    oldMessage.edit({ components: buttons });
   } catch (error) {
     console.log(error);
   } finally {
@@ -29,10 +33,17 @@ module.exports = {
 
   async execute(client, interaction) {
     logger.info(`[Command] Spotify Playing`);
-    const response = await spotify.currentlyPlaying(false);
+    const userId = interaction.user.id;
+    const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
+    if (!accessToken) {
+      interaction.reply({ content: `${BASE_URL}auth/spotify?discordId=${userId}`, ephemeral: true });
+      return;
+    }
+    const response = await spotify.currentlyPlaying(userId, false);
     await interaction.reply({
       content: response,
-      components: [button.actionRow(["refresh", "check"])],
+      components: [button.actionRow(["check"])],
+      // components: [button.actionRow(["refresh", "check"])],
     });
     const message = await interaction.fetchReply();
     disablePrevious(client, message);
@@ -50,7 +61,7 @@ function spotifyPlayingButtonInteraction(client, message) {
   collector.on("collect", async (press) => {
     if (press.customId == "save") {
       if (press.message.content.startsWith("https://open.spotify.com/track/")) {
-        fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + "\n", {flag: "a+"}, (err) => {
+        fs.writeFile("./web/saved/spotify.txt", press.message.content.replace("https://open.spotify.com/track/", "") + "\n", { flag: "a+" }, (err) => {
           if (err) {
             console.log(err);
           }
@@ -61,7 +72,7 @@ function spotifyPlayingButtonInteraction(client, message) {
       });
     } else {
       const response = await spotify.currentlyPlaying(false);
-      await press.update({content: response});
+      await press.update({ content: response });
     }
   });
 }

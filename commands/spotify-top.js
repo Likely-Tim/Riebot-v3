@@ -1,12 +1,16 @@
-const {SlashCommandBuilder} = require("@discordjs/builders");
-const {InteractionCollector} = require("discord.js");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { InteractionCollector } = require("discord.js");
 const spotify = require("../utils/spotify.js");
 const button = require("../utils/buttons.js");
+
+const BASE_URL = process.env.BASE_URL;
 
 // Databases
 const dbInteractions = require("../databaseUtils/messageInteractions.js");
 const dbSpotify = require("../databaseUtils/spotify-top.js");
-const {logger} = require("../utils/logger.js");
+const dbToken = require("../databaseUtils/tokens");
+
+const { logger } = require("../utils/logger.js");
 
 function responseParse(input) {
   input = input.items;
@@ -47,7 +51,7 @@ async function disablePrevious(client, newMessage) {
     const oldMessageId = await dbInteractions.get("spotify-top_messageId");
     const oldMessage = await oldChannel.messages.fetch(oldMessageId);
     const buttons = button.disableAllButtons(oldMessage.components);
-    oldMessage.edit({components: buttons});
+    oldMessage.edit({ components: buttons });
   } catch (error) {
     console.log(error);
   } finally {
@@ -85,14 +89,20 @@ module.exports = {
   async execute(client, interaction) {
     const type = interaction.options.getString("type");
     const time = interaction.options.getString("time");
-    logger.info(`[Command] Spotify Top | Type: ${type} | Time: ${time}`);
-    const response = await spotify.topPlayed(type, time);
+    const userId = interaction.user.id;
+    logger.info(`[Command] Spotify Top | Type: ${type} | Time: ${time} | User: ${userId}`);
+    const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
+    if (!accessToken) {
+      interaction.reply({ content: `${BASE_URL}auth/spotify?discordId=${userId}`, ephemeral: true });
+      return;
+    }
+    const response = await spotify.topPlayed(userId, type, time);
     const [spotifyUrl, length] = responseParse(response);
     let components = [button.actionRow(["disabled_prev", "next"])];
     if (length == 1) {
       components = [button.actionRow(["disabled_prev", "disabled_next"])];
     }
-    await interaction.reply({content: spotifyUrl, components});
+    await interaction.reply({ content: spotifyUrl, components });
 
     const message = await interaction.fetchReply();
     await disablePrevious(client, message);
@@ -109,7 +119,7 @@ function spotifyTopButtonInteraction(client, message) {
   });
   collector.on("collect", async (press) => {
     const result = await contentRetrieve(press.customId);
-    press.update({content: result[0], components: result[1]});
+    press.update({ content: result[0], components: result[1] });
   });
 }
 

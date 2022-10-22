@@ -3,7 +3,7 @@
  */
 
 const fetch = require("node-fetch");
-const {logger} = require("./logger");
+const { logger } = require("./logger");
 
 const dbToken = require("../databaseUtils/tokens");
 
@@ -27,7 +27,7 @@ async function refreshToken() {
   };
   let response = await fetch(url, {
     method: "POST",
-    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(data),
   });
   logger.info(`[Spotify] Refreshing Token Status: ${response.status}`);
@@ -36,6 +36,36 @@ async function refreshToken() {
   }
   response = await response.json();
   await dbToken.put("spotifyAccess", response.access_token);
+  return true;
+}
+
+/**
+ * Refreshes Stored Spotify Access Token
+ *
+ * @param {Integer} userId - Discord User ID
+ * @return {Promise<boolean>} Boolean if successful or not
+ */
+async function refreshTokenUser(userId) {
+  logger.info(`[Spotify] Refreshing Token for ${userId}`);
+  const refreshToken = await dbToken.get(`${userId}SpotifyRefresh`);
+  const url = "https://accounts.spotify.com/api/token";
+  const data = {
+    client_id: SPOTIFY_ID,
+    client_secret: SPOTIFY_SECRET,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  };
+  let response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(data),
+  });
+  logger.info(`[Spotify] Refreshing Token Status: ${response.status}`);
+  if (response.status != 200) {
+    return false;
+  }
+  response = await response.json();
+  await dbToken.put(`${userId}SpotifyAccess`, response.access_token);
   return true;
 }
 
@@ -53,13 +83,16 @@ async function search(type, query) {
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Search Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await search(type, query);
   } else {
     throw `Spotify Status: ${response.status}`;
@@ -72,14 +105,14 @@ async function search(type, query) {
  * @param {boolean} uri - Want URI or link to track
  * @return {Promise<string>} URI or link of currently playing track
  */
-async function currentlyPlaying(uri) {
+async function currentlyPlaying(userId, uri) {
   logger.info(`[Spotify] Getting playing track | URI: ${uri}`);
-  const accessToken = await dbToken.get("spotifyAccess");
+  const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
   const url = "https://api.spotify.com/v1/me/player/currently-playing";
   const authorization = "Bearer " + accessToken;
   let response = await fetch(url, {
     method: "GET",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Playing Track Status: ${response.status}`);
   if (response.status == 200) {
@@ -94,8 +127,11 @@ async function currentlyPlaying(uri) {
   } else if (response.status == 204) {
     return "Nothing Playing";
   } else if (response.status == 401) {
-    await refreshToken();
-    return await currentlyPlaying(uri);
+    const success = await refreshTokenUser(userId);
+    if (!success) {
+      return;
+    }
+    return await currentlyPlaying(userId, uri);
   } else {
     throw `Spotify Status: ${response.status}`;
   }
@@ -107,25 +143,28 @@ async function currentlyPlaying(uri) {
  * @param {string} playlistId - Spotify Playlist ID
  * @return {boolean} Successful or not
  */
-async function playlistAddPlaying(playlistId) {
+async function playlistAddPlaying(userId, playlistId) {
   logger.info(`[Spotify] Adding playing track to ${playlistId}`);
-  const uri = await currentlyPlaying(true);
+  const uri = await currentlyPlaying(userId, true);
   if (!uri.startsWith("spotify:track:")) {
     return false;
   }
-  const accessToken = await dbToken.get("spotifyAccess");
+  const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=${uri}`;
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "POST",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Adding Playing Track Status: ${response.status}`);
   if (response.status == 201) {
     return true;
   } else if (response.status == 401) {
-    await refreshToken();
-    return await playlistAddPlaying(playlistId);
+    const success = await refreshTokenUser(userId);
+    if (!success) {
+      return;
+    }
+    return await playlistAddPlaying(userId, playlistId);
   } else {
     throw `Spotify Status: ${response.status}`;
   }
@@ -138,21 +177,24 @@ async function playlistAddPlaying(playlistId) {
  * @param {string} period - Time period (Allowed Values: short_term, medium_term, long_term)
  * @return {Promise<object>} Spotify Results
  */
-async function topPlayed(type, period) {
-  logger.info(`[Spotify] Getting top played ${type} for ${period}`);
-  const accessToken = await dbToken.get("spotifyAccess");
+async function topPlayed(userId, type, period) {
+  logger.info(`[Spotify] Getting top played ${type} during ${period} for ${userId}`);
+  const accessToken = await dbToken.get(`${userId}SpotifyAccess`);
   const url = `https://api.spotify.com/v1/me/top/${type}?time_range=${period}&limit=5`;
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Getting Top Played Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
-    await refreshToken();
-    return await topPlayed(type, period);
+    const success = await refreshTokenUser(userId);
+    if (!success) {
+      return;
+    }
+    return await topPlayed(userId, type, period);
   } else {
     throw `Spotify Status: ${response.status}`;
   }
@@ -171,13 +213,16 @@ async function getPlaylist(playlistId) {
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Getting Playlist Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await getPlaylist(playlistId);
   } else {
     throw `Spotify Status: ${response.status}`;
@@ -196,13 +241,16 @@ async function nextPage(url) {
   const authorization = "Bearer " + accessToken;
   const response = await fetch(url, {
     method: "GET",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Next Page Status: ${response.status}`);
   if (response.status == 200) {
     return await response.json();
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await nextPage(url);
   } else {
     throw `Spotify Status: ${response.status}`;
@@ -221,17 +269,20 @@ async function createPlaylist(name, isPublic) {
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = "https://api.spotify.com/v1/users/fhusion/playlists";
-  const data = {name, public: isPublic};
+  const data = { name, public: isPublic };
   const response = await fetch(url, {
     method: "POST",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
     body: JSON.stringify(data),
   });
   logger.info(`[Spotify] Playlist Creatioin Status: ${response.status}`);
   if (response.status == 201) {
     return await response.json();
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await createPlaylist(name, isPublic);
   } else {
     throw `Spotify Status: ${response.status}`;
@@ -250,17 +301,20 @@ async function addItemsToPlaylist(playlistId, uriArray) {
   const accessToken = await dbToken.get("spotifyAccess");
   const authorization = "Bearer " + accessToken;
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
-  const data = {uris: uriArray};
+  const data = { uris: uriArray };
   const response = await fetch(url, {
     method: "POST",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
     body: JSON.stringify(data),
   });
   logger.info(`[Spotify] Adding Status: ${response.status}`);
   if (response.status == 201) {
     return true;
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await addItemsToPlaylist(playlistId, uriArray);
   } else {
     throw `Spotify Status: ${response.status}`;
@@ -280,13 +334,16 @@ async function unfollowPlaylist(playlistId) {
   const url = `https://api.spotify.com/v1/playlists/${playlistId}/followers`;
   const response = await fetch(url, {
     method: "DELETE",
-    headers: {Authorization: authorization},
+    headers: { Authorization: authorization },
   });
   logger.info(`[Spotify] Deleting Playlist Status: ${response.status}`);
   if (response.status == 200) {
     return true;
   } else if (response.status == 401) {
-    await refreshToken();
+    const success = await refreshToken();
+    if (!success) {
+      return;
+    }
     return await unfollowPlaylist();
   } else {
     throw `Spotify Status: ${response.status}`;
