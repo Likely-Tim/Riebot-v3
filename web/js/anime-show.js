@@ -141,10 +141,14 @@ function reorderDays() {
   const date = new Date();
   let dayNumber = date.getDay();
   for (let i = 0; i < 7; i++) {
-    dayNumber = dayNumber % 7;
-    let day = numberToDiv[dayNumber];
-    document.getElementById(day).style.order = i;
-    dayNumber++;
+    try {
+      dayNumber = dayNumber % 7;
+      let day = numberToDiv[dayNumber];
+      document.getElementById(day).style.order = i;
+      dayNumber++;
+    } catch (error) {
+      continue;
+    }
   }
 }
 
