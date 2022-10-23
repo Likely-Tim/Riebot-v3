@@ -22,22 +22,25 @@ const { spotifyPlayingButtonInteraction } = require("./commands/spotify-playing.
 const { spotifyTopButtonInteraction } = require("./commands/spotify-top.js");
 const { animeShowButtonInteraction, animeVAButtonInteraction, animeSearchInteraction } = require("./commands/anime.js");
 
-// Cron Jobs
-cronJobs(client);
-
 const googleVision = require("./js/text-extraction");
 
 // Databases
 const dbInteractions = require("./databaseUtils/messageInteractions.js");
 
-startUpLogger.info("Start Up");
-refreshSlashCommands();
-client.commands = new Collection();
-const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".js"));
+startUp();
 
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  client.commands.set(command.data.name, command);
+async function startUp() {
+  startUpLogger.info("Start Up");
+  initializeServer();
+  refreshSlashCommands();
+  cronJobs(client);
+  client.commands = new Collection();
+  const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".js"));
+
+  for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.data.name, command);
+  }
 }
 
 client.once("ready", async () => {
@@ -112,7 +115,6 @@ client.on("messageCreate", async (message) => {
 });
 
 // client.on('debug', console.log);
-initializeServer();
 client.login(process.env.DISCORD_TOKEN);
 
 //////////////////////////////////////////
